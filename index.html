@@ -1,16 +1,1396 @@
-
 <!DOCTYPE html>
+<!-- GitHub Pages version: all entries stored in this device's browser localStorage. No accounts, server sync, or encryption. Not approved for sensitive personal finance records. -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Soldier Financial Management</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1e3a1e">
+  <title>Excelsior Soldier Financial Manager</title>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #1e3a1e;
+      --primary-light: #eaf3e7;
+      --primary-accent: #86c07b;
+      --blue-accent: #2563eb;
+      --blue-light: #eff6ff;
+      --green-badge-bg: #dcfce7;
+      --green-badge-text: #16a34a;
+      --danger: #b91c1c;
+      --danger-light: #fee2e2;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 95px; }
+
+    /* Main Header */
+    header {
+      background: linear-gradient(135deg, #1e3a1e 0%, #0d1f0d 100%);
+      color: white;
+      padding: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+    .header-top { display: flex; justify-content: space-between; align-items: center; }
+    .app-title { font-size: 18px; font-weight: 800; letter-spacing: -0.2px; }
+    .badge-sync { background: var(--primary-accent); color: #0f290d; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+
+    .soldier-input-container {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.12);
+      padding: 6px 12px;
+      border-radius: 8px;
+    }
+    .soldier-input-container label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      margin: 0;
+      color: #e2e8f0;
+    }
+    .soldier-input-container input {
+      background: transparent;
+      border: none;
+      border-bottom: 1.5px solid rgba(255,255,255,0.6);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 2px 4px;
+      width: 100%;
+      outline: none;
+    }
+    .soldier-input-container input:focus { border-bottom-color: #fff; background: rgba(255,255,255,0.08); }
+
+    .container { padding: 14px; max-width: 680px; margin: 0 auto; }
+    
+    /* Interactive Card Matching Reference Screenshot */
+    .showcase-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      border: 1px solid var(--border);
+    }
+
+    .time-saved-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .time-saved-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+    .time-saved-val {
+      font-size: 26px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+    }
+    .badge-accelerated {
+      background: var(--green-badge-bg);
+      color: var(--green-badge-text);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      display: inline-block;
+    }
+    .interest-saved-sub {
+      font-size: 15px;
+      color: #334155;
+      font-weight: 500;
+      margin-bottom: 18px;
+    }
+    .interest-saved-sub b {
+      color: #0f172a;
+      font-weight: 700;
+    }
+
+    /* Custom Legend */
+    .chart-legend-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .legend-line-solid {
+      width: 18px;
+      height: 3px;
+      background: var(--blue-accent);
+      border-radius: 2px;
+    }
+    .legend-line-dashed {
+      width: 18px;
+      height: 0;
+      border-top: 2px dashed #94a3b8;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 250px;
+      width: 100%;
+      margin-bottom: 16px;
+      transition: height 0.3s ease;
+    }
+    .chart-container.expanded {
+      height: 380px;
+    }
+
+    /* 3-Column Metrics */
+    .metrics-trio {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      text-align: center;
+      padding: 14px 8px;
+      border-top: 1px solid #f1f5f9;
+      border-bottom: 1px solid #f1f5f9;
+      margin-bottom: 18px;
+      gap: 8px;
+    }
+    .metric-trio-lbl {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .metric-trio-val {
+      font-size: 18px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    /* Sliders Section */
+    .slider-row {
+      margin-bottom: 16px;
+    }
+    .slider-row label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+    .slider-flex-control {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .slider-flex-control input[type="range"] {
+      flex: 1;
+      height: 6px;
+      border-radius: 3px;
+      accent-color: var(--blue-accent);
+      cursor: pointer;
+    }
+    .slider-amount-display {
+      font-size: 17px;
+      font-weight: 800;
+      color: #0f172a;
+      min-width: 105px;
+      text-align: right;
+    }
+
+    /* Standard Card */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border: 1px solid var(--border);
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .form-group { margin-bottom: 14px; }
+    label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; }
+    input, select { width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; background: #fafafa; }
+
+    .item-list { display: flex; flex-direction: column; gap: 10px; }
+    .list-item { display: flex; flex-direction: column; padding: 12px; background: #ffffff; border: 1px solid var(--border); border-radius: 8px; gap: 6px; }
+    .item-top-row { display: flex; justify-content: space-between; align-items: flex-start; }
+    .item-name { font-weight: 700; font-size: 14px; color: #0f172a; }
+    .item-detail { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+    .item-amount-large { font-weight: 800; font-size: 15px; color: #0f172a; text-align: right; }
+    .item-bottom-bar { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 8px; margin-top: 4px; }
+
+    .progress-bar { height: 7px; background: #f1f5f9; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+    .progress-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.3s ease; }
+
+    .action-group { display: flex; gap: 6px; align-items: center; }
+    .btn-action { display: inline-flex; align-items: center; gap: 4px; border: 1px solid transparent; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; }
+    .btn-edit { background: var(--primary-light); color: var(--primary); border-color: #d1e7cc; }
+    .btn-delete { background: var(--danger-light); color: var(--danger); border-color: #fecaca; }
+    .btn-add { background: var(--primary); color: white; border: none; padding: 7px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-reset { background: #f8fafc; border: 1px solid #cbd5e1; color: var(--text-muted); padding: 6px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: 600; }
+    .btn-toggle-expand { background: var(--blue-light); border: 1px solid #bfdbfe; color: var(--blue-accent); font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+
+    .item-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; background: var(--primary-light); color: var(--primary); text-transform: uppercase; }
+    .item-badge.mortgage { background: #fef3c7; color: #92400e; }
+    .item-badge.savings { background: #e0f2fe; color: #0369a1; }
+
+    /* Tab Bar */
+    .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 8px 0; z-index: 200; box-shadow: 0 -2px 10px rgba(0,0,0,0.03); }
+    .tab-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--text-muted); font-size: 11px; font-weight: 600; cursor: pointer; width: 25%; }
+    .tab-btn.active { color: var(--primary); }
+    .tab-icon { font-size: 18px; }
+    .view-content { display: none; }
+    .view-content.active { display: block; }
+
+    /* Modals */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 500; align-items: center; justify-content: center; padding: 14px; }
+    .modal-overlay.open { display: flex; }
+    .modal-card { background: #fff; width: 100%; max-width: 440px; border-radius: var(--radius); padding: 18px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+  </style>
 </head>
 <body>
-  <h1>Soldier Financial Management</h1>
-  <p>Manage debt, savings, and financial goals.</p>
-  <a href="https://script.google.com/macros/s/AKfycbzaQg4iWphddFBg2S9eKACrnhvIAHMTnJMVS6gAD74UiipifQAio40-xrAoLsKNr9mu/exec">
-    Open Financial Planner
-  </a>
+
+  <!-- App Header with Name of Soldier -->
+  <header>
+    <div class="header-top">
+      <div class="app-title">Excelsior Soldier Financial Manager</div>
+      <span class="badge-sync" id="sync-status">Ready</span>
+    </div>
+    <div class="soldier-input-container">
+      <label for="soldier-name">Name of Soldier:</label>
+      <input type="text" id="soldier-name" placeholder="Rank and Name" onchange="persistState()">
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- View 1: Summary Charts & Strategy -->
+    <div id="view-dashboard" class="view-content active">
+
+      <!-- Featured Interactive Card Matching Screenshot Reference -->
+      <div class="showcase-card">
+        <div class="time-saved-label">Time saved from debt freedom</div>
+        <div class="time-saved-row">
+          <div class="time-saved-val" id="disp-time-saved">17 yr 2 mo earlier</div>
+          <span class="badge-accelerated">Accelerated payoff</span>
+        </div>
+        <div class="interest-saved-sub">Total interest saved: <b id="disp-interest-saved">$194,875</b></div>
+
+        <!-- Legend -->
+        <div class="chart-legend-row">
+          <div class="legend-item" style="color: var(--blue-accent);">
+            <div class="legend-line-solid"></div>
+            <span>Accelerated snowball</span>
+          </div>
+          <div class="legend-item" style="color: #64748b;">
+            <div class="legend-line-dashed"></div>
+            <span>Standard baseline</span>
+          </div>
+        </div>
+
+        <!-- Main Comparison Line Chart -->
+        <div class="chart-container">
+          <canvas id="payoffStrategyChart"></canvas>
+        </div>
+
+        <!-- 3-Column Metrics Bar -->
+        <div class="metrics-trio">
+          <div>
+            <div class="metric-trio-lbl">CC payoff</div>
+            <div class="metric-trio-val" id="disp-cc-payoff">10 mo</div>
+          </div>
+          <div>
+            <div class="metric-trio-lbl">Total payoff</div>
+            <div class="metric-trio-val" id="disp-total-payoff">5 yr 10 mo</div>
+          </div>
+          <div>
+            <div class="metric-trio-lbl">Total interest</div>
+            <div class="metric-trio-val" id="disp-total-interest">$55,600</div>
+          </div>
+        </div>
+
+        <!-- Dual Interactive Sliders -->
+        <div class="slider-row">
+          <label for="slider-extra-loan">Additional credit card monthly payment</label>
+          <div class="slider-flex-control">
+            <input type="range" id="slider-extra-loan" min="0" max="3000" step="25" value="1100">
+            <div class="slider-amount-display" id="disp-loan-slider">$1100/mo</div>
+          </div>
+        </div>
+
+        <div class="slider-row" style="margin-bottom: 8px;">
+          <label for="slider-extra-mortgage">Additional mortgage monthly curtailment</label>
+          <div class="slider-flex-control">
+            <input type="range" id="slider-extra-mortgage" min="0" max="3000" step="50" value="1400">
+            <div class="slider-amount-display" id="disp-mortgage-slider">$1400/mo</div>
+          </div>
+        </div>
+
+        <div style="text-align: right; margin-top: 14px;">
+          <button class="btn-reset" onclick="resetToDefaults()">Reset Default Accounts</button>
+        </div>
+      </div>
+
+      <!-- Chart 2: Remaining Balance vs Timeline (Min Only vs Min + Extra) -->
+      <div class="card">
+        <div class="card-title">
+          <span>Remaining Balance vs. Timeline</span>
+          <span style="font-size: 11px; font-weight: 500; color: var(--text-muted);">Min Payment vs. Min + Extra</span>
+        </div>
+        <div class="chart-container" style="height: 220px;">
+          <canvas id="balanceTimelineChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- View 2: Debt Tab (Creditors) -->
+    <div id="view-debts" class="view-content">
+      <div class="card">
+        <div class="card-title">
+          <span>Creditors &amp; Debt Accounts</span>
+          <button class="btn-add" onclick="openDebtModal()">＋ Add Creditor</button>
+        </div>
+        <div class="item-list" id="debts-list"></div>
+      </div>
+    </div>
+
+    <!-- View 3: Savings & Sinking Funds Tab -->
+    <div id="view-savings" class="view-content">
+      <!-- Expandable Savings Growth Chart -->
+      <div class="card">
+        <div class="card-title">
+          <span>Savings &amp; Compound Growth Projection</span>
+          <button class="btn-toggle-expand" id="btn-expand-savings" onclick="toggleSavingsChartExpand()">⛶ Expand Chart</button>
+        </div>
+        <div class="chart-container" id="savings-chart-box" style="height: 220px;">
+          <canvas id="savingsProjectionChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Savings Goals List -->
+      <div class="card">
+        <div class="card-title">
+          <span>Savings Goals &amp; Sinking Reserves</span>
+          <button class="btn-add" onclick="openSavingsModal()">＋ Add Goal</button>
+        </div>
+        <div class="item-list" id="savings-list"></div>
+      </div>
+    </div>
+
+    <!-- View 4: Payoff Schedule List -->
+    <div id="view-schedule" class="view-content">
+      <div class="card">
+        <div class="card-title">
+          <span>Accelerated Payoff Sequence</span>
+          <span style="font-size: 11.5px; color: var(--primary); font-weight: 600;">Snowball Priority</span>
+        </div>
+        <div class="item-list" id="payoff-order-list"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modal for Creating/Editing Debt Accounts -->
+  <div class="modal-overlay" id="debtModal">
+    <div class="modal-card">
+      <div class="modal-title" id="modalDebtTitle">Add Creditor Account</div>
+      <input type="hidden" id="debt-edit-id">
+
+      <div class="form-group">
+        <label>Account Type</label>
+        <select id="debt-modal-type" onchange="updateModalFieldsByType()">
+          <option value="Credit Card">Credit Card</option>
+          <option value="Loan">Loan (Personal / Auto / Student)</option>
+          <option value="Mortgage">Mortgage</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Account / Creditor Name</label>
+        <input type="text" id="debt-modal-name" placeholder="e.g. Military Star Card">
+      </div>
+
+      <div class="form-group">
+        <label>Remaining Balance ($)</label>
+        <input type="number" id="debt-modal-balance" placeholder="0">
+      </div>
+
+      <div class="form-group">
+        <label>Interest Rate / APR (%)</label>
+        <input type="number" step="0.01" id="debt-modal-rate" placeholder="e.g. 15.2">
+      </div>
+
+      <div class="form-group">
+        <label>Minimum Monthly Payment ($)</label>
+        <input type="number" id="debt-modal-payment" placeholder="0">
+      </div>
+
+      <!-- Field for Extra Payment (Credit & Loan Accounts) -->
+      <div class="form-group" id="field-group-extra">
+        <label>Extra Monthly Payment ($)</label>
+        <input type="number" id="debt-modal-extra" placeholder="0" value="0">
+      </div>
+
+      <!-- Field for Curtailment (Mortgage Accounts) -->
+      <div class="form-group" id="field-group-curtailment" style="display: none;">
+        <label>Monthly Curtailment ($)</label>
+        <input type="number" id="debt-modal-curtailment" placeholder="0" value="0">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-reset" onclick="closeDebtModal()">Cancel</button>
+        <button class="btn-add" onclick="saveDebtAccount()">Save Creditor</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Creating/Editing Savings Goals -->
+  <div class="modal-overlay" id="savingsModal">
+    <div class="modal-card">
+      <div class="modal-title" id="modalSavingsTitle">Add Savings Goal</div>
+      <input type="hidden" id="savings-edit-id">
+
+      <div class="form-group">
+        <label>Goal / Sinking Fund Name</label>
+        <input type="text" id="savings-modal-name" placeholder="e.g. Emergency Fund">
+      </div>
+
+      <div class="form-group">
+        <label>Current Saved Balance ($)</label>
+        <input type="number" id="savings-modal-current" placeholder="0">
+      </div>
+
+      <div class="form-group">
+        <label>Target Goal Amount ($)</label>
+        <input type="number" id="savings-modal-target" placeholder="0">
+      </div>
+
+      <div class="form-group">
+        <label>Planned Monthly Contribution ($)</label>
+        <input type="number" id="savings-modal-monthly" placeholder="0">
+      </div>
+
+      <div class="form-group">
+        <label>Estimated APY (%)</label>
+        <input type="number" step="0.01" id="savings-modal-apy" placeholder="e.g. 4.5" value="4.5">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-reset" onclick="closeSavingsModal()">Cancel</button>
+        <button class="btn-add" onclick="saveSavingsGoal()">Save Goal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation Tab Bar -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('dashboard', this)">
+      <span class="tab-icon">📊</span>
+      <span>Summary</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('debts', this)">
+      <span class="tab-icon">💳</span>
+      <span>Debts</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('savings', this)">
+      <span class="tab-icon">💰</span>
+      <span>Savings</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('schedule', this)">
+      <span class="tab-icon">📋</span>
+      <span>Schedule</span>
+    </button>
+  </nav>
+
+  <script>
+    var soldierName = "SSG J. Miller";
+
+    // Defaults modeled to match the $258k reference baseline in screenshot
+    var DEFAULT_DEBTS = [
+      { id: 1, type: "Credit Card", name: "Military Star Card", balance: 4500, rate: 0.1524, payment: 130, extraPayment: 50, curtailment: 0 },
+      { id: 2, type: "Loan", name: "USAA Auto Loan", balance: 18500, rate: 0.0590, payment: 380, extraPayment: 75, curtailment: 0 },
+      { id: 3, type: "Credit Card", name: "Navy Federal Card", balance: 5000, rate: 0.1800, payment: 140, extraPayment: 50, curtailment: 0 },
+      { id: 4, type: "Mortgage", name: "VA Primary Residence", balance: 230000, rate: 0.0475, payment: 1200, extraPayment: 0, curtailment: 200 }
+    ];
+
+    // Starting Savings Goals requested
+    var DEFAULT_SAVINGS = [
+      { id: 1, name: "Emergency Fund", current: 4000, target: 15000, monthly: 400, apy: 0.045 },
+      { id: 2, name: "TSP (Thrift Savings)", current: 25000, target: 100000, monthly: 750, apy: 0.070 },
+      { id: 3, name: "Holiday Savings", current: 350, target: 1200, monthly: 100, apy: 0.0425 },
+      { id: 4, name: "Car Maintenance", current: 1200, target: 4000, monthly: 150, apy: 0.0425 },
+      { id: 5, name: "Home Maintenance", current: 2500, target: 6000, monthly: 200, apy: 0.0425 },
+      { id: 6, name: "Lunch at Darwin", current: 120, target: 500, monthly: 50, apy: 0.040 }
+    ];
+
+    var debts = JSON.parse(JSON.stringify(DEFAULT_DEBTS));
+    var savings = JSON.parse(JSON.stringify(DEFAULT_SAVINGS));
+    var sliderLoanExtra = 1100;
+    var sliderMortgageCurtailment = 1400;
+
+    // Simulation Cache
+    var cachedBaseline = null;
+    var cachedMinPlusExtra = null;
+
+    var chartBalanceTimeline = null;
+    var chartPayoffStrategy = null;
+    var chartSavingsProjection = null;
+    var isSavingsChartExpanded = false;
+
+    function formatCurrency(v) { return "$" + Math.round(v || 0).toLocaleString(); }
+
+    function formatTimeLabel(months) {
+      if (months <= 0) return "Now";
+      var yr = Math.floor(months / 12);
+      var mo = Math.round(months % 12);
+      if (yr === 0) return mo + " mo";
+      if (mo === 0) return yr + " yr";
+      return yr + " yr " + mo + " mo";
+    }
+
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.view-content').forEach(function(el) { el.classList.remove('active'); });
+      document.querySelectorAll('.tab-btn').forEach(function(el) { el.classList.remove('active'); });
+      document.getElementById('view-' + tabId).classList.add('active');
+      btn.classList.add('active');
+      window.scrollTo(0, 0);
+
+      if (tabId === 'dashboard') {
+        runDebtSimulation();
+      } else if (tabId === 'savings') {
+        renderSavingsList();
+        renderSavingsChart();
+      }
+    }
+
+    function toggleSavingsChartExpand() {
+      var box = document.getElementById('savings-chart-box');
+      var btn = document.getElementById('btn-expand-savings');
+      isSavingsChartExpanded = !isSavingsChartExpanded;
+      if (isSavingsChartExpanded) {
+        box.classList.add('expanded');
+        box.style.height = "380px";
+        btn.innerText = "⛶ Collapse Chart";
+      } else {
+        box.classList.remove('expanded');
+        box.style.height = "220px";
+        btn.innerText = "⛶ Expand Chart";
+      }
+      if (chartSavingsProjection) {
+        chartSavingsProjection.resize();
+      }
+    }
+
+    function updateModalFieldsByType() {
+      var type = document.getElementById('debt-modal-type').value;
+      if (type === 'Mortgage') {
+        document.getElementById('field-group-curtailment').style.display = 'block';
+        document.getElementById('field-group-extra').style.display = 'none';
+      } else {
+        document.getElementById('field-group-curtailment').style.display = 'none';
+        document.getElementById('field-group-extra').style.display = 'block';
+      }
+    }
+
+    function persistState() {
+      soldierName = document.getElementById('soldier-name').value || "Soldier";
+      var payload = {
+        soldierName: soldierName,
+        debts: debts,
+        savings: savings,
+        sliderLoanExtra: sliderLoanExtra,
+        sliderMortgageCurtailment: sliderMortgageCurtailment
+      };
+      localStorage.setItem('excelsior_soldier_fin_data_v3', JSON.stringify(payload));
+      var badge = document.getElementById('sync-status');
+      badge.innerText = 'Saved ✓';
+      badge.style.background = '#86efac';
+      setTimeout(function() {
+        badge.innerText = 'Ready';
+        badge.style.background = 'var(--primary-accent)';
+      }, 1500);
+    }
+
+    function loadState() {
+      var cached = localStorage.getItem('excelsior_soldier_fin_data_v3');
+      if (cached) {
+        try {
+          var parsed = JSON.parse(cached);
+          if (parsed.soldierName) soldierName = parsed.soldierName;
+          if (parsed.debts) debts = parsed.debts;
+          if (parsed.savings) savings = parsed.savings;
+          if (parsed.sliderLoanExtra !== undefined) sliderLoanExtra = parsed.sliderLoanExtra;
+          if (parsed.sliderMortgageCurtailment !== undefined) sliderMortgageCurtailment = parsed.sliderMortgageCurtailment;
+        } catch (e) {}
+      }
+      document.getElementById('soldier-name').value = soldierName;
+      document.getElementById('slider-extra-loan').value = sliderLoanExtra;
+      document.getElementById('slider-extra-mortgage').value = sliderMortgageCurtailment;
+      document.getElementById('disp-loan-slider').innerText = formatCurrency(sliderLoanExtra) + "/mo";
+      document.getElementById('disp-mortgage-slider').innerText = formatCurrency(sliderMortgageCurtailment) + "/mo";
+      
+      invalidateBaselineCache();
+      refreshUI();
+    }
+
+    function resetToDefaults() {
+      if (!confirm("Reset all debts and savings to starter defaults?")) return;
+      localStorage.removeItem('excelsior_soldier_fin_data_v3');
+      soldierName = "SSG J. Miller";
+      debts = JSON.parse(JSON.stringify(DEFAULT_DEBTS));
+      savings = JSON.parse(JSON.stringify(DEFAULT_SAVINGS));
+      sliderLoanExtra = 1100;
+      sliderMortgageCurtailment = 1400;
+      document.getElementById('soldier-name').value = soldierName;
+      document.getElementById('slider-extra-loan').value = sliderLoanExtra;
+      document.getElementById('slider-extra-mortgage').value = sliderMortgageCurtailment;
+      document.getElementById('disp-loan-slider').innerText = formatCurrency(sliderLoanExtra) + "/mo";
+      document.getElementById('disp-mortgage-slider').innerText = formatCurrency(sliderMortgageCurtailment) + "/mo";
+      invalidateBaselineCache();
+      refreshUI();
+      persistState();
+    }
+
+    function invalidateBaselineCache() {
+      cachedBaseline = null;
+      cachedMinPlusExtra = null;
+    }
+
+    function refreshUI() {
+      renderDebtsList();
+      renderSavingsList();
+      runDebtSimulation();
+      renderSavingsChart();
+    }
+
+    // High Precision Month-by-Month Compound Amortization Engine
+    function calculateAmortization(accountList, options) {
+      var accounts = accountList.map(function(d) {
+        return {
+          id: d.id,
+          name: d.name,
+          type: d.type,
+          balance: d.balance,
+          rate: d.rate,
+          minPayment: d.payment,
+          extraPayment: d.type === 'Mortgage' ? 0 : (d.extraPayment || 0),
+          curtailment: d.type === 'Mortgage' ? (d.curtailment || 0) : 0,
+          totalInterestPaid: 0,
+          payoffMonth: null
+        };
+      });
+
+      var maxHorizon = 360; // 30 Years
+      var totalStart = accounts.reduce(function(sum, a) { return sum + a.balance; }, 0);
+      var points = [{ x: 0, y: Math.round(totalStart) }];
+      var freedSnowballPool = 0;
+      var ccPayoffMonth = 0;
+
+      for (var m = 1; m <= maxHorizon; m++) {
+        var activeNonMortgage = accounts.filter(function(a) { return a.type !== 'Mortgage' && a.balance > 0.01; });
+        var activeMortgage = accounts.filter(function(a) { return a.type === 'Mortgage' && a.balance > 0.01; });
+
+        if (activeNonMortgage.length === 0 && ccPayoffMonth === 0) {
+          ccPayoffMonth = m - 1;
+        }
+
+        if (activeNonMortgage.length === 0 && activeMortgage.length === 0) {
+          break;
+        }
+
+        activeNonMortgage.sort(function(a, b) { return a.balance - b.balance; }); // Lowest balance first (Snowball)
+
+        var monthlyBalance = 0;
+
+        accounts.forEach(function(acc) {
+          if (acc.balance <= 0.01) return;
+
+          // Accrue compound monthly interest
+          var interest = acc.balance * (acc.rate / 12.0);
+          acc.balance += interest;
+          acc.totalInterestPaid += interest;
+
+          // Standard baseline minimum
+          var payment = acc.minPayment;
+
+          // Individual account level extra payment or curtailment
+          if (options.applyAccountExtras) {
+            if (acc.type === 'Mortgage') {
+              payment += acc.curtailment;
+            } else {
+              payment += acc.extraPayment;
+            }
+          }
+
+          // Mortgage Curtailment Slider bonus
+          if (acc.type === 'Mortgage' && options.addlMortgageCurtailment) {
+            payment += options.addlMortgageCurtailment;
+          }
+
+          // Accelerated Snowball Cascade + Credit Card Slider bonus
+          if (options.enableSnowballCascade) {
+            if (acc.type !== 'Mortgage' && activeNonMortgage.length > 0 && acc.id === activeNonMortgage[0].id) {
+              payment += (options.addlLoanMonthly || 0) + freedSnowballPool;
+            } else if (acc.type === 'Mortgage' && activeNonMortgage.length === 0) {
+              // Crucial Snowball Rollover: once credit cards/loans are paid off,
+              // ALL extra cash and freed monthly payments cascade into the mortgage!
+              payment += (options.addlLoanMonthly || 0) + freedSnowballPool;
+            }
+          }
+
+          if (payment >= acc.balance) {
+            if (options.enableSnowballCascade) {
+              freedSnowballPool += (acc.minPayment + (options.applyAccountExtras ? (acc.type === 'Mortgage' ? acc.curtailment : acc.extraPayment) : 0));
+            }
+            acc.balance = 0;
+            if (!acc.payoffMonth) {
+              acc.payoffMonth = m;
+            }
+          } else {
+            acc.balance -= payment;
+          }
+
+          monthlyBalance += acc.balance;
+        });
+
+        points.push({ x: m, y: Math.round(monthlyBalance) });
+        if (monthlyBalance <= 0) break;
+      }
+
+      var totalInterest = accounts.reduce(function(sum, a) { return sum + a.totalInterestPaid; }, 0);
+      var totalMonths = points.length - 1;
+
+      return {
+        points: points,
+        totalInterest: totalInterest,
+        monthsToDebtFree: totalMonths,
+        ccPayoffMonths: ccPayoffMonth || totalMonths,
+        accounts: accounts
+      };
+    }
+
+    function runDebtSimulation() {
+      if (debts.length === 0) {
+        document.getElementById('disp-time-saved').innerText = "0 mo earlier";
+        document.getElementById('disp-interest-saved').innerText = "$0";
+        document.getElementById('disp-cc-payoff').innerText = "0 mo";
+        document.getElementById('disp-total-payoff').innerText = "0 mo";
+        document.getElementById('disp-total-interest').innerText = "$0";
+        renderPayoffSchedule([]);
+        if (chartBalanceTimeline) chartBalanceTimeline.destroy();
+        if (chartPayoffStrategy) chartPayoffStrategy.destroy();
+        return;
+      }
+
+      // 1. Static Standard Baseline
+      if (!cachedBaseline) {
+        cachedBaseline = calculateAmortization(debts, {
+          applyAccountExtras: false,
+          enableSnowballCascade: false,
+          addlLoanMonthly: 0,
+          addlMortgageCurtailment: 0
+        });
+      }
+
+      // 2. Minimum Payment + Extra Payment (Timeline chart)
+      if (!cachedMinPlusExtra) {
+        cachedMinPlusExtra = calculateAmortization(debts, {
+          applyAccountExtras: true,
+          enableSnowballCascade: false,
+          addlLoanMonthly: 0,
+          addlMortgageCurtailment: 0
+        });
+      }
+
+      // 3. Dynamic Accelerated Snowball (Driven directly by live slider values)
+      var resAccelerated = calculateAmortization(debts, {
+        applyAccountExtras: true,
+        enableSnowballCascade: true,
+        addlLoanMonthly: sliderLoanExtra,
+        addlMortgageCurtailment: sliderMortgageCurtailment
+      });
+
+      // Update Key Metrics matching Screenshot
+      var monthsSaved = Math.max(0, cachedBaseline.monthsToDebtFree - resAccelerated.monthsToDebtFree);
+      document.getElementById('disp-time-saved').innerText = formatTimeLabel(monthsSaved) + " earlier";
+      
+      var interestSaved = Math.max(0, cachedBaseline.totalInterest - resAccelerated.totalInterest);
+      document.getElementById('disp-interest-saved').innerText = formatCurrency(interestSaved);
+
+      document.getElementById('disp-cc-payoff').innerText = formatTimeLabel(resAccelerated.ccPayoffMonths);
+      document.getElementById('disp-total-payoff').innerText = formatTimeLabel(resAccelerated.monthsToDebtFree);
+      document.getElementById('disp-total-interest').innerText = formatCurrency(resAccelerated.totalInterest);
+
+      renderPayoffSchedule(resAccelerated.accounts);
+      updateCharts(cachedBaseline, cachedMinPlusExtra, resAccelerated);
+    }
+
+    function updateCharts(baselineRes, minExtraRes, acceleratedRes) {
+      var maxMonths = baselineRes.monthsToDebtFree;
+      var maxY = Math.ceil(baselineRes.points[0].y * 1.05);
+
+      // --- Chart 1: Accelerated Snowball vs Standard Baseline (Matching Screenshot) ---
+      if (!chartPayoffStrategy) {
+        var ctx2 = document.getElementById('payoffStrategyChart').getContext('2d');
+        chartPayoffStrategy = new Chart(ctx2, {
+          type: 'line',
+          data: {
+            datasets: [
+              {
+                label: 'Standard baseline',
+                data: baselineRes.points,
+                borderColor: '#94a3b8',
+                backgroundColor: 'transparent',
+                borderWidth: 1.5,
+                fill: false,
+                borderDash: [4, 4],
+                pointRadius: function(ctx) {
+                  var idx = ctx.dataIndex;
+                  var len = ctx.dataset.data.length;
+                  return (idx === 0 || idx === len - 1) ? 4.5 : 0;
+                },
+                pointBackgroundColor: '#64748b'
+              },
+              {
+                label: 'Accelerated snowball',
+                data: acceleratedRes.points,
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                borderWidth: 2.8,
+                fill: true,
+                pointRadius: function(ctx) {
+                  var idx = ctx.dataIndex;
+                  var len = ctx.dataset.data.length;
+                  return (idx === 0 || idx === len - 1) ? 5.5 : 0;
+                },
+                pointBackgroundColor: '#2563eb',
+                tension: 0.1
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  title: function(items) { return formatTimeLabel(items[0].parsed.x); },
+                  label: function(item) { return item.dataset.label + ': ' + formatCurrency(item.parsed.y); }
+                }
+              }
+            },
+            scales: {
+              x: {
+                type: 'linear',
+                min: 0,
+                max: maxMonths,
+                ticks: {
+                  maxTicksLimit: 5,
+                  callback: function(val) { return formatTimeLabel(val); },
+                  font: { size: 10.5, weight: '500' },
+                  color: '#64748b'
+                },
+                grid: { display: false }
+              },
+              y: {
+                min: 0,
+                max: maxY,
+                ticks: {
+                  maxTicksLimit: 5,
+                  callback: function(val) {
+                    if (val === 0) return '0';
+                    return Math.round(val / 1000) + 'k';
+                  },
+                  font: { size: 10.5, weight: '500' },
+                  color: '#64748b'
+                },
+                grid: {
+                  color: '#f1f5f9',
+                  borderDash: [3, 3]
+                }
+              }
+            }
+          }
+        });
+      } else {
+        // High performance 60fps real-time contraction/expansion
+        chartPayoffStrategy.options.scales.x.max = maxMonths;
+        chartPayoffStrategy.options.scales.y.max = maxY;
+        chartPayoffStrategy.data.datasets[0].data = baselineRes.points;
+        chartPayoffStrategy.data.datasets[1].data = acceleratedRes.points;
+        chartPayoffStrategy.update('none');
+      }
+
+      // --- Chart 2: Remaining Balance vs Timeline ---
+      if (!chartBalanceTimeline) {
+        var ctx1 = document.getElementById('balanceTimelineChart').getContext('2d');
+        chartBalanceTimeline = new Chart(ctx1, {
+          type: 'line',
+          data: {
+            datasets: [
+              {
+                label: 'Minimum Payment Only',
+                data: baselineRes.points,
+                borderColor: '#b91c1c',
+                backgroundColor: 'rgba(185, 28, 28, 0.04)',
+                borderWidth: 2,
+                fill: true,
+                pointRadius: 0
+              },
+              {
+                label: 'Minimum Payment + Extra Payment',
+                data: minExtraRes.points,
+                borderColor: '#1e3a1e',
+                backgroundColor: 'rgba(30, 58, 30, 0.08)',
+                borderWidth: 2,
+                fill: true,
+                pointRadius: 0
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+              tooltip: {
+                callbacks: {
+                  title: function(items) { return formatTimeLabel(items[0].parsed.x); },
+                  label: function(item) { return item.dataset.label + ': ' + formatCurrency(item.parsed.y); }
+                }
+              }
+            },
+            scales: {
+              x: {
+                type: 'linear',
+                min: 0,
+                max: maxMonths,
+                ticks: {
+                  maxTicksLimit: 5,
+                  callback: function(val) { return formatTimeLabel(val); },
+                  font: { size: 10 }
+                },
+                grid: { display: false }
+              },
+              y: {
+                min: 0,
+                max: maxY,
+                ticks: {
+                  callback: function(val) { return '$' + Math.round(val / 1000) + 'k'; },
+                  font: { size: 10 }
+                },
+                grid: { color: '#f1f5f9' }
+              }
+            }
+          }
+        });
+      } else {
+        chartBalanceTimeline.options.scales.x.max = maxMonths;
+        chartBalanceTimeline.options.scales.y.max = maxY;
+        chartBalanceTimeline.data.datasets[0].data = baselineRes.points;
+        chartBalanceTimeline.data.datasets[1].data = minExtraRes.points;
+        chartBalanceTimeline.update('none');
+      }
+    }
+
+    // Savings Growth Projection Chart (Simulating next 60 months of contributions & compound APY)
+    function renderSavingsChart() {
+      var ctx = document.getElementById('savingsProjectionChart');
+      if (!ctx) return;
+      var ctx2d = ctx.getContext('2d');
+
+      var totalCurrent = savings.reduce(function(sum, s) { return sum + s.current; }, 0);
+      var totalMonthly = savings.reduce(function(sum, s) { return sum + s.monthly; }, 0);
+      var avgApy = savings.length > 0 ? (savings.reduce(function(sum, s) { return sum + s.apy; }, 0) / savings.length) : 0.04;
+
+      var labels = [];
+      var growthData = [];
+      var contributionOnlyData = [];
+      var curVal = totalCurrent;
+      var contVal = totalCurrent;
+
+      for (var mo = 0; mo <= 60; mo += 6) {
+        labels.push(mo === 0 ? "Now" : "Yr " + (mo / 12).toFixed(1));
+        if (mo === 0) {
+          growthData.push(Math.round(curVal));
+          contributionOnlyData.push(Math.round(contVal));
+        } else {
+          // Compound monthly over 6 month steps
+          for (var k = 0; k < 6; k++) {
+            curVal = (curVal + totalMonthly) * (1 + avgApy / 12);
+            contVal += totalMonthly;
+          }
+          growthData.push(Math.round(curVal));
+          contributionOnlyData.push(Math.round(contVal));
+        }
+      }
+
+      if (chartSavingsProjection) {
+        chartSavingsProjection.data.labels = labels;
+        chartSavingsProjection.data.datasets[0].data = growthData;
+        chartSavingsProjection.data.datasets[1].data = contributionOnlyData;
+        chartSavingsProjection.update();
+      } else {
+        chartSavingsProjection = new Chart(ctx2d, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Projected Balance (with APY Interest)',
+                data: growthData,
+                borderColor: '#1e3a1e',
+                backgroundColor: 'rgba(30, 58, 30, 0.08)',
+                borderWidth: 2.5,
+                fill: true,
+                pointRadius: 3.5,
+                pointBackgroundColor: '#1e3a1e'
+              },
+              {
+                label: 'Total Deposits Only',
+                data: contributionOnlyData,
+                borderColor: '#94a3b8',
+                backgroundColor: 'transparent',
+                borderWidth: 1.5,
+                borderDash: [4, 4],
+                fill: false,
+                pointRadius: 0
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+              tooltip: {
+                callbacks: {
+                  label: function(item) { return item.dataset.label + ': ' + formatCurrency(item.parsed.y); }
+                }
+              }
+            },
+            scales: {
+              x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+              y: {
+                ticks: {
+                  callback: function(v) { return '$' + Math.round(v / 1000) + 'k'; },
+                  font: { size: 10 }
+                },
+                grid: { color: '#f1f5f9' }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    function renderSavingsList() {
+      var list = document.getElementById("savings-list");
+      if (!list) return;
+      list.innerHTML = "";
+
+      savings.forEach(function(s) {
+        var rem = Math.max(0, s.target - s.current);
+        var mos = s.monthly > 0 ? Math.ceil(rem / s.monthly) : "-";
+        var pct = Math.min(100, Math.round((s.current / s.target) * 100));
+
+        var item = document.createElement("div");
+        item.className = "list-item";
+        item.innerHTML =
+          '<div class="item-top-row">' +
+            '<div>' +
+              '<div class="item-name">' + s.name + '</div>' +
+              '<div class="item-detail">+' + formatCurrency(s.monthly) + '/mo | ' + (s.apy * 100).toFixed(2) + '% APY | Target in: ' + mos + ' mos</div>' +
+            '</div>' +
+            '<div style="text-align: right;">' +
+              '<div class="item-amount-large">' + formatCurrency(s.current) + '</div>' +
+              '<div style="font-size: 11px; color: var(--text-muted);">of ' + formatCurrency(s.target) + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%;"></div></div>' +
+          '<div class="item-bottom-bar">' +
+            '<span class="item-badge savings">' + pct + '% Complete</span>' +
+            '<div class="action-group">' +
+              '<button class="btn-action btn-edit" onclick="editSavingsGoal(' + s.id + ')">✏ Edit</button>' +
+              '<button class="btn-action btn-delete" onclick="deleteSavingsGoal(' + s.id + ')">🗑 Remove</button>' +
+            '</div>' +
+          '</div>';
+        list.appendChild(item);
+      });
+    }
+
+    function renderPayoffSchedule(accounts) {
+      var list = document.getElementById("payoff-order-list");
+      list.innerHTML = "";
+      var sorted = accounts.slice().sort(function(a, b) { return (a.payoffMonth || 999) - (b.payoffMonth || 999); });
+
+      sorted.forEach(function(d, idx) {
+        var timeStr = d.payoffMonth ? formatTimeLabel(d.payoffMonth) : 'Ongoing';
+        var item = document.createElement("div");
+        item.className = "list-item";
+        item.innerHTML = '<div class="item-top-row">' +
+          '<div>' +
+            '<div class="item-name">#' + (idx + 1) + ' ' + d.name + ' (' + d.type + ')</div>' +
+            '<div class="item-detail">Payoff Target: <b>' + timeStr + '</b> | Total Interest Paid: ' + formatCurrency(d.totalInterestPaid) + '</div>' +
+          '</div>' +
+          '<div class="item-amount-large">' + formatCurrency(debts.find(function(x){return x.id===d.id;}).balance) + '</div>' +
+        '</div>';
+        list.appendChild(item);
+      });
+    }
+
+    function renderDebtsList() {
+      var list = document.getElementById("debts-list");
+      list.innerHTML = "";
+      debts.forEach(function(d) {
+        var isMortgage = d.type === 'Mortgage';
+        var extraInfo = isMortgage
+          ? 'Curtailment: <b>' + formatCurrency(d.curtailment) + '/mo</b>'
+          : 'Extra Payment: <b>' + formatCurrency(d.extraPayment) + '/mo</b>';
+
+        var badgeClass = isMortgage ? 'item-badge mortgage' : 'item-badge';
+
+        var item = document.createElement("div");
+        item.className = "list-item";
+        item.innerHTML =
+          '<div class="item-top-row">' +
+            '<div>' +
+              '<div class="item-name">' + d.name + '</div>' +
+              '<div class="item-detail">' + (d.rate * 100).toFixed(2) + '% APR | Base Min: ' + formatCurrency(d.payment) + '/mo | ' + extraInfo + '</div>' +
+            '</div>' +
+            '<div class="item-amount-large">' + formatCurrency(d.balance) + '</div>' +
+          '</div>' +
+          '<div class="item-bottom-bar">' +
+            '<span class="' + badgeClass + '">' + d.type + '</span>' +
+            '<div class="action-group">' +
+              '<button class="btn-action btn-edit" onclick="editDebt(' + d.id + ')">✏ Edit</button>' +
+              '<button class="btn-action btn-delete" onclick="deleteDebt(' + d.id + ')">🗑 Remove</button>' +
+            '</div>' +
+          '</div>';
+        list.appendChild(item);
+      });
+    }
+
+    /* Modal Controls for Debts */
+    function openDebtModal(id) {
+      var modal = document.getElementById('debtModal');
+      document.getElementById('debt-edit-id').value = id || '';
+      if (id) {
+        var d = debts.find(function(x) { return x.id === id; });
+        document.getElementById('modalDebtTitle').innerText = 'Edit Creditor Account';
+        document.getElementById('debt-modal-type').value = d.type;
+        document.getElementById('debt-modal-name').value = d.name;
+        document.getElementById('debt-modal-balance').value = d.balance;
+        document.getElementById('debt-modal-rate').value = (d.rate * 100).toFixed(2);
+        document.getElementById('debt-modal-payment').value = d.payment;
+        document.getElementById('debt-modal-extra').value = d.extraPayment || 0;
+        document.getElementById('debt-modal-curtailment').value = d.curtailment || 0;
+      } else {
+        document.getElementById('modalDebtTitle').innerText = 'Add Creditor Account';
+        document.getElementById('debt-modal-type').value = 'Credit Card';
+        document.getElementById('debt-modal-name').value = '';
+        document.getElementById('debt-modal-balance').value = '';
+        document.getElementById('debt-modal-rate').value = '';
+        document.getElementById('debt-modal-payment').value = '';
+        document.getElementById('debt-modal-extra').value = '0';
+        document.getElementById('debt-modal-curtailment').value = '0';
+      }
+      updateModalFieldsByType();
+      modal.classList.add('open');
+    }
+
+    function closeDebtModal() {
+      document.getElementById('debtModal').classList.remove('open');
+    }
+
+    function saveDebtAccount() {
+      var id = document.getElementById('debt-edit-id').value;
+      var type = document.getElementById('debt-modal-type').value;
+      var name = document.getElementById('debt-modal-name').value.trim();
+      var balance = parseFloat(document.getElementById('debt-modal-balance').value) || 0;
+      var rate = (parseFloat(document.getElementById('debt-modal-rate').value) || 0) / 100;
+      var payment = parseFloat(document.getElementById('debt-modal-payment').value) || 0;
+      var extraPayment = parseFloat(document.getElementById('debt-modal-extra').value) || 0;
+      var curtailment = parseFloat(document.getElementById('debt-modal-curtailment').value) || 0;
+
+      if (!name) {
+        alert("Please enter the creditor/account name.");
+        return;
+      }
+
+      if (id) {
+        var d = debts.find(function(x) { return x.id === parseInt(id); });
+        if (d) {
+          d.type = type;
+          d.name = name;
+          d.balance = balance;
+          d.rate = rate;
+          d.payment = payment;
+          d.extraPayment = type === 'Mortgage' ? 0 : extraPayment;
+          d.curtailment = type === 'Mortgage' ? curtailment : 0;
+        }
+      } else {
+        debts.push({
+          id: Date.now(),
+          type: type,
+          name: name,
+          balance: balance,
+          rate: rate,
+          payment: payment,
+          extraPayment: type === 'Mortgage' ? 0 : extraPayment,
+          curtailment: type === 'Mortgage' ? curtailment : 0
+        });
+      }
+
+      invalidateBaselineCache();
+      closeDebtModal();
+      refreshUI();
+      persistState();
+    }
+
+    function editDebt(id) {
+      openDebtModal(id);
+    }
+
+    function deleteDebt(id) {
+      var debt = debts.find(function(d) { return d.id === id; });
+      if (!confirm("Are you sure you want to remove " + (debt ? debt.name : "this account") + "?")) return;
+      debts = debts.filter(function(d) { return d.id !== id; });
+      invalidateBaselineCache();
+      refreshUI();
+      persistState();
+    }
+
+    /* Modal Controls for Savings */
+    function openSavingsModal(id) {
+      var modal = document.getElementById('savingsModal');
+      document.getElementById('savings-edit-id').value = id || '';
+      if (id) {
+        var s = savings.find(function(x) { return x.id === id; });
+        document.getElementById('modalSavingsTitle').innerText = 'Edit Savings Goal';
+        document.getElementById('savings-modal-name').value = s.name;
+        document.getElementById('savings-modal-current').value = s.current;
+        document.getElementById('savings-modal-target').value = s.target;
+        document.getElementById('savings-modal-monthly').value = s.monthly;
+        document.getElementById('savings-modal-apy').value = (s.apy * 100).toFixed(2);
+      } else {
+        document.getElementById('modalSavingsTitle').innerText = 'Add Savings Goal';
+        document.getElementById('savings-modal-name').value = '';
+        document.getElementById('savings-modal-current').value = '';
+        document.getElementById('savings-modal-target').value = '';
+        document.getElementById('savings-modal-monthly').value = '';
+        document.getElementById('savings-modal-apy').value = '4.5';
+      }
+      modal.classList.add('open');
+    }
+
+    function closeSavingsModal() {
+      document.getElementById('savingsModal').classList.remove('open');
+    }
+
+    function saveSavingsGoal() {
+      var id = document.getElementById('savings-edit-id').value;
+      var name = document.getElementById('savings-modal-name').value.trim();
+      var current = parseFloat(document.getElementById('savings-modal-current').value) || 0;
+      var target = parseFloat(document.getElementById('savings-modal-target').value) || 0;
+      var monthly = parseFloat(document.getElementById('savings-modal-monthly').value) || 0;
+      var apy = (parseFloat(document.getElementById('savings-modal-apy').value) || 0) / 100;
+
+      if (!name) {
+        alert("Please enter a goal name.");
+        return;
+      }
+
+      if (id) {
+        var s = savings.find(function(x) { return x.id === parseInt(id); });
+        if (s) {
+          s.name = name;
+          s.current = current;
+          s.target = target;
+          s.monthly = monthly;
+          s.apy = apy;
+        }
+      } else {
+        savings.push({
+          id: Date.now(),
+          name: name,
+          current: current,
+          target: target,
+          monthly: monthly,
+          apy: apy
+        });
+      }
+
+      closeSavingsModal();
+      renderSavingsList();
+      renderSavingsChart();
+      persistState();
+    }
+
+    function editSavingsGoal(id) {
+      openSavingsModal(id);
+    }
+
+    function deleteSavingsGoal(id) {
+      var s = savings.find(function(x) { return x.id === id; });
+      if (!confirm("Are you sure you want to remove " + (s ? s.name : "this savings goal") + "?")) return;
+      savings = savings.filter(function(x) { return x.id !== id; });
+      renderSavingsList();
+      renderSavingsChart();
+      persistState();
+    }
+
+    // High Responsiveness Interactive Slider Listeners
+    document.getElementById('slider-extra-loan').addEventListener('input', function(e) {
+      sliderLoanExtra = parseInt(e.target.value);
+      document.getElementById('disp-loan-slider').innerText = formatCurrency(sliderLoanExtra) + "/mo";
+      runDebtSimulation(); // Real-time line contraction/expansion
+    });
+    document.getElementById('slider-extra-loan').addEventListener('change', persistState);
+
+    document.getElementById('slider-extra-mortgage').addEventListener('input', function(e) {
+      sliderMortgageCurtailment = parseInt(e.target.value);
+      document.getElementById('disp-mortgage-slider').innerText = formatCurrency(sliderMortgageCurtailment) + "/mo";
+      runDebtSimulation(); // Real-time line contraction/expansion
+    });
+    document.getElementById('slider-extra-mortgage').addEventListener('change', persistState);
+
+    window.onload = function() {
+      loadState();
+    };
+  </script>
 </body>
 </html>
