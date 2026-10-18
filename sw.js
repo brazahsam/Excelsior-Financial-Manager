@@ -1,8 +1,8 @@
 // Excelsior Financial Manager application shell. No personal financial records are cached here.
-const CACHE_NAME = 'excelsior-pwa-v4';
+const CACHE_NAME = 'excelsior-pwa-v6';
 const APP_SHELL = [
   './', './index.html', './manifest.webmanifest', './army-star-logo.png',
-  './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon-32.png'
+  './backup.js', './pin-lock.js', './firebase-config.js', './cloud-sync.js', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon-32.png'
 ];
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));

@@ -1,61 +1,32 @@
-# Excelsior Soldier Financial Manager
+# Excelsior Soldier Financial Manager — v6
 
-A mobile-friendly, browser-based demonstration of a debt snowball and savings planner, converted from a Google Apps Script HTML application.
+GitHub Pages PWA with debt snowball, savings, daycare, income and expenses, and local encrypted backups.
 
-## Current features
-- Debt accounts (credit cards, loans, mortgages)
-- Additional-payment sliders and payoff visualizations
-- Debt snowball projection and payoff sequence
-- Savings goals and sinking funds
-- Charts powered by Chart.js CDN
+## Deploy
+Upload **all files except `firestore.rules`** to the root of your GitHub Pages repository (the rules file is reference material for Firebase Console). Keep filename `index.html`. Commit changes. Existing locally stored data uses the unchanged `excelsior_soldier_fin_data_v3` key and should remain available on the same browser/origin. Export a backup before updating.
 
-## Publish with GitHub Pages
-1. Create or open a GitHub repository.
-2. Upload `index.html` and `.nojekyll` to the repository root (you may also upload this README).
-3. Commit the files.
-4. Open **Settings → Pages**.
-5. Choose **Deploy from a branch**, `main`, `/(root)`, and **Save**.
-6. Open the published Pages URL when deployment finishes.
+## Encrypted backup (works without Firebase)
+Open **Backup** tab, create a 4–12 digit numeric PIN, confirm and click **Export Encrypted Backup**. Save the downloaded `.json` in Files/iCloud Drive or Google Drive, and keep the PIN safe separately. To restore, open Backup, enter the backup PIN, click Restore Backup, select saved JSON file and confirm replacement. Import overwrites current local data; export your current data first. Encryption uses Web Crypto AES-256-GCM with PBKDF2-SHA256 (310,000 iterations, random salt and IV). It requires HTTPS.
 
-## Privacy and security — read before sharing
-- The app saves financial entries and the soldier name using **browser localStorage**, not Google Sheets or a secure account. The label `Saved` does **not** mean cloud synchronization.
-- **Do not use real sensitive financial data** in this demonstration. Local browser storage is not encrypted by the app, is device/browser specific, and can be lost or accessed by others with access to that browser/profile.
-- The initial sample records and soldier name are fictitious examples.
-- There is no sign-in, access control, secure server-side persistence, or cross-device synchronization. GitHub Pages is a public static host.
-- Do not publish private financial information, credentials, or access tokens in the repository.
-- Interest and payoff projections are illustrative and **not independently validated**. Check amortization rules, payments that do not cover interest, payoff horizon, mortgage treatment, debt snowball rollover, and individual savings rates before real use.
-- Chart.js loads from a public CDN, requiring network access.
+## Firebase cloud sync (must be configured before use)
+1. Create a Firebase project at https://console.firebase.google.com/ and add a **Web app**.
+2. Enable **Authentication → Sign-in method → Email/Password**.
+3. Create a **Cloud Firestore** database in production mode. Go to **Firestore Database → Rules**, paste the contents of `firestore.rules` and publish the rules. **Do not** upload `firestore.rules` as a web route and assume the security rules are applied; you MUST install them in Firebase Console.
+4. Add your GitHub Pages site hostname to Firebase Authentication's **Authorized domains** where required.
+5. Replace the `null` in `firebase-config.js` with your project's Firebase **Web SDK config** (apiKey, authDomain, projectId, appId), never a service-account key. Commit changes.
+6. On the website, open Backup, create an account or sign in, enter a distinct 4–12 digit numeric **encryption PIN** (a different secret from the account password is recommended). Click **Back Up Now**, or opt into **Automatically upload encrypted changes** for this session. Sign in again to restore on another device using the *same encryption PIN*.
 
-## Architecture
-Static HTML/CSS/JavaScript website using Chart.js and `localStorage`. The existing Google Apps Script `doGet()` wrapper is not needed for the GitHub Pages version, and the application currently contains no `google.script.run` calls.
-
-## Install shortcut
-On iPhone: Safari → Share → Add to Home Screen. On Android: Chrome → menu → Add to Home screen. This is a home-screen shortcut and may open in the browser; a fully offline installable PWA requires additional implementation.
+### Important limits
+- Cloud save transfers **ciphertext**, not plaintext financial data, but Firebase Authentication still stores account identifiers/metadata. There is no password reset for the encryption secret.
+- Cloud restore requires explicit confirmation and replaces local data. Automatic mode is **upload-only**. It is opt-in per session; there is no silent cloud overwrite or device merge. Check the status after saving before deleting any app.
+- Browser `localStorage` still holds the working unencrypted local copy; this is not independently security audited and is **not ready for production handling of soldiers' sensitive records**.
+- GitHub Pages hosts public source files. Never commit real account records or service-account credentials.
+- Firebase SDK and Chart.js require network access. Manual encryption and restoration can operate offline once the app shell is cached.
+- Preserve exported encrypted JSON in an independent second location and verify you can restore with fictional data.
+- The debt amortization algorithm has not been independently validated.
 
 
-## Version 2 — Income & Expenses
-- New **Income & Expenses** fifth tab with selectable reporting month, total income, total expense, and net balance.
-- Donut chart breaks actual paid expenses down by category.
-- Default expense categories: **Child Daycare**, **Electricity**, **Groceries**, **Gas**; add unlimited custom categories via **Other**.
-- Daycare logs recorded **days of daycare**, **amount paid**, **payee**, **payment date**, and a separate **next projected payment amount/date**. Future projected amounts are not included in paid expenses until an actual transaction is recorded.
-- Add, edit, and delete income and expenses. Stored under the existing localStorage key alongside the existing debt and savings data.
-- This is **local-only**, not cloud backup; changing browsers, deleting the Home Screen app, or clearing website data can erase entries. Do not enter sensitive actual financial records for operational use without authentication, secured persistence and calculation audits.
+## Version 6 app PIN
+On first launch, create a 4–12 digit numeric app access PIN and confirm it. Subsequent launches ask for it. This is a **convenience screen lock only**, not encryption of local financial data. The PIN verifier is stored locally and offers limited defense; the app is still **not approved for sensitive financial data**. There is no PIN recovery mechanism in this demo; do not delete browser storage without a tested backup.
 
-### Upgrade an existing GitHub Pages site
-Upload/replace `index.html` and `README.md` in the repository root, commit, and wait for Pages redeployment. Existing localStorage data in the same browser/site origin is preserved by the updated code; back up your data separately before changes.
-
-
-## Included branding
-
-- `army-star-logo.png` — app logo used in the header, browser tab icon, and iPhone home screen icon.
-
-## iPhone and Android install (Version 4 PWA)
-- Files added: `manifest.webmanifest`, `sw.js`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png`, and `favicon-32.png`.
-- **Upload every file in this ZIP to the repository root**; do not upload the ZIP as one file. Keep `index.html` named exactly that.
-- Ensure GitHub Pages is enabled for `main` / `(root)`. The app must be accessed over HTTPS (the normal `github.io` URL).
-- iPhone: open the GitHub Pages URL in **Safari** → Share → **Add to Home Screen** → enable **Open as Web App** when offered → Add.
-- Android: open in **Chrome** → menu → **Install app** (or **Add to Home screen** when offered).
-- If an older shortcut continues to use an old icon, remove only the Home Screen shortcut and add it again; **this may erase local-only app data**, so export/backup first. You can alternatively wait for icon refresh without deleting.
-- Offline use: the main HTML and visual assets are precached; Chart.js is cached after it is fetched online. Offline behavior can depend on first-load and browser storage policies, so test it before relying on it.
-- **Not cloud synced:** Financial data is still stored using localStorage, not in a secure account. Deleting/clearing website data may permanently delete entries. Do not enter sensitive personal financial information into this demo.
-- For a production app used by other soldiers, add authentication, segregated encrypted cloud storage, security rules, backup/recovery, and financial-model validation.
+Encrypted manual backups and cloud backups now accept numeric 4–12 digit PINs. **A 4-digit PIN is highly susceptible to guessing and is not appropriate for sensitive data**. We strongly advise 8–12 unpredictable digits, or upgrading to longer passphrases. Files exported with the older v5 12+ character passphrase remain importable using that original passphrase; however, the numeric-only PIN field in v6 may need an older restore utility to enter it. Firebase Authentication account passwords are separate and still subject to Firebase security requirements.

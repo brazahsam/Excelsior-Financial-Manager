@@ -1,0 +1,12 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/backups/{backupId} {
+      allow get: if request.auth != null && request.auth.uid == userId && backupId == 'current';
+      allow create, update: if request.auth != null && request.auth.uid == userId && backupId == 'current'
+        && request.resource.data.keys().hasOnly(['envelope','updatedAt'])
+        && request.resource.data.envelope.format == 'excelsior-encrypted-backup';
+      allow delete: if false;
+    }
+  }
+}

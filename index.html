@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- GitHub Pages version: all entries stored in this device's browser localStorage. No accounts, server sync, or encryption. Not approved for sensitive personal finance records. -->
+<!-- Financial records stay in localStorage unless encrypted backup/export or Firebase sync is configured. Test before entering sensitive real-world information. -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -298,9 +298,38 @@
 .money-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.money-form-grid .full{grid-column:1/-1}.money-form-grid label{margin-bottom:4px}.money-form-grid input,.money-form-grid select{width:100%}.money-modal-card{max-height:88vh;overflow-y:auto}
 @media(max-width:390px){.money-stat strong{font-size:13px}.money-donut{width:190px;height:190px}.money-donut:after{inset:43px}.money-donut-center{inset:47px}}
 
+    .security-note{font-size:12px;color:#475569;line-height:1.55;margin-bottom:12px}
+    .backup-actions{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}
+    .backup-actions button{flex:1;min-width:135px;padding:12px}
+    .backup-status{font-size:12px;line-height:1.6;background:#f1f5f9;border-radius:9px;padding:10px;color:#334155;white-space:pre-wrap}
+    .security-group{margin:10px 0}
+    .security-group input{margin-top:5px}
+  </style>
+  <style>
+    #pin-gate{position:fixed;inset:0;z-index:9999;background:linear-gradient(150deg,#122b14,#1e3a1e);display:flex;align-items:center;justify-content:center;padding:20px;color:white}
+    #pin-gate[hidden]{display:none}
+    .pin-gate-card{width:min(100%,390px);background:white;color:#132517;border-radius:20px;padding:25px;box-shadow:0 18px 60px #0007;text-align:center}
+    .pin-gate-card img{width:76px;height:76px;object-fit:cover;border-radius:18px;margin-bottom:10px}
+    .pin-gate-card h2{font-size:20px;margin:8px 0}
+    .pin-gate-card p{font-size:13px;line-height:1.45;color:#53635b;margin:9px 0}
+    .pin-gate-card input{font-size:22px;text-align:center;letter-spacing:4px;margin:8px 0}
+    #pin-gate-error{color:#9d2020;min-height:22px;font-size:12px}
+    #pin-gate-action{width:100%;padding:13px;border:0;border-radius:10px;background:#1e3a1e;color:white;font-weight:700;font-size:15px}
   </style>
 </head>
 <body>
+  <div id="pin-gate" role="dialog" aria-modal="true" aria-labelledby="pin-gate-title">
+    <div class="pin-gate-card">
+      <img src="army-star-logo.png" alt="Excelsior star logo">
+      <h2 id="pin-gate-title">Excelsior Access PIN</h2>
+      <p id="pin-gate-instructions">Enter your numeric PIN.</p>
+      <input id="pin-gate-input" type="password" inputmode="numeric" pattern="[0-9]{4,12}" minlength="4" maxlength="12" autocomplete="off" placeholder="4–12 digit PIN" aria-label="App access PIN">
+      <input id="pin-gate-confirm" type="password" inputmode="numeric" pattern="[0-9]{4,12}" minlength="4" maxlength="12" autocomplete="off" placeholder="Confirm PIN" aria-label="Confirm PIN" hidden>
+      <div id="pin-gate-error" role="alert"></div>
+      <button id="pin-gate-action" type="button">Continue</button>
+      <p>Screen lock only: local financial data remains unencrypted on this device. Four-digit PINs offer limited protection.</p>
+    </div>
+  </div>
 
   <!-- App Header with Name of Soldier -->
   <header>
@@ -478,6 +507,31 @@
 
   </div>
 
+  <!-- Data Security: manual encrypted backup and optional Firebase encrypted cloud sync -->
+  <section id="view-backup" class="view-content container">
+    <div class="card">
+      <div class="card-title"><span>🔐 Backup &amp; Restore</span></div>
+      <p class="security-note">Create a PIN-encrypted backup containing your name, debts, savings, income and expenses. Keep your backup and PIN safe. A 4-digit PIN is easy to guess and offers weak protection for financial backups; use 8–12 digits for better security. A lost PIN cannot be recovered.</p>
+      <label class="security-group">Backup PIN (at least 4 digits)<input type="password" id="backup-password" inputmode="numeric" pattern="[0-9]{4,12}" minlength="4" maxlength="12" autocomplete="off" placeholder="Enter 4–12 digit PIN"></label>
+      <label class="security-group">Confirm backup PIN for export<input type="password" id="backup-confirm" inputmode="numeric" pattern="[0-9]{4,12}" minlength="4" maxlength="12" autocomplete="off" placeholder="Re-enter PIN"></label>
+      <div class="backup-actions"><button class="btn-add" id="export-backup" type="button">⬇ Export Encrypted Backup</button><button class="btn-add" id="restore-backup" type="button">⬆ Restore Backup</button></div>
+      <input id="backup-file" type="file" accept=".json,application/json" style="display:none">
+      <p class="security-note">On iPhone, save the downloaded file in Files → iCloud Drive. On Android, save to Files or Google Drive. Backups are not uploaded automatically unless Firebase sync is configured and enabled.</p>
+      <div id="backup-status" class="backup-status" role="status" aria-live="polite">Local encrypted backups available.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">☁ Encrypted Firebase Sync</div>
+      <p class="security-note">Optional cloud sync stores only password-encrypted data in your own Firebase project. Requires account registration, Firestore access rules and an authenticated session. Never publish a service-account key.</p>
+      <label class="security-group">Email<input id="cloud-email" type="email" autocomplete="email" placeholder="Email"></label>
+      <label class="security-group">Account password<input id="cloud-login-password" type="password" autocomplete="current-password" placeholder="Sign-in password"></label>
+      <div class="backup-actions"><button class="btn-add" id="cloud-register" type="button">Create Account</button><button class="btn-add" id="cloud-login" type="button">Sign In</button><button class="btn-reset" id="cloud-signout" type="button">Sign Out</button></div>
+      <label class="security-group">Cloud encryption PIN (at least 4 digits; separate from account password)<input id="cloud-encryption-password" type="password" inputmode="numeric" pattern="[0-9]{4,12}" minlength="4" maxlength="12" autocomplete="off" placeholder="PIN required to decrypt on another device"></label>
+      <label class="security-group"><input id="cloud-auto" type="checkbox" style="width:auto;margin-right:6px">Automatically upload encrypted changes after signing in</label>
+      <div class="backup-actions"><button class="btn-add" id="cloud-save" type="button">☁ Back Up Now</button><button class="btn-add" id="cloud-load" type="button">⬇ Restore from Cloud</button></div>
+      <div id="cloud-status" class="backup-status" role="status" aria-live="polite">Firebase not configured. Manual encrypted backup works now.</div>
+    </div>
+  </section>
+
   <!-- Modal for Creating/Editing Debt Accounts -->
   <div class="modal-overlay" id="debtModal">
     <div class="modal-card">
@@ -613,8 +667,10 @@
       <span class="tab-icon">🧾</span><span>Income &amp; Expenses</span>
     </button>
     <button class="tab-btn" onclick="switchTab('schedule', this)">
-      <span class="tab-icon">📋</span>
-      <span>Schedule</span>
+      <span class="tab-icon">📋</span><span>Schedule</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('backup', this)">
+      <span class="tab-icon">🔐</span><span>Backup</span>
     </button>
   </nav>
 
@@ -724,6 +780,7 @@
         moneyEntries: moneyEntries
       };
       localStorage.setItem('excelsior_soldier_fin_data_v3', JSON.stringify(payload));
+      window.dispatchEvent(new Event('excelsior:changed'));
       var badge = document.getElementById('sync-status');
       badge.innerText = 'Saved ✓';
       badge.style.background = '#86efac';
@@ -1589,6 +1646,10 @@
       loadState();
     };
   </script>
+  <script src="pin-lock.js" defer></script>
+  <script src="backup.js" defer></script>
+  <script src="firebase-config.js" defer></script>
+  <script type="module" src="cloud-sync.js"></script>
   <script>
     // PWA shell caching; financial entries remain in this device's localStorage.
     if ('serviceWorker' in navigator) {
