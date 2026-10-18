@@ -3,10 +3,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#1e3a1e">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="Excelsior Finance">
   <title>Excelsior Soldier Financial Manager</title>
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -42,9 +46,13 @@
       z-index: 100;
       box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     }
-    .header-top { display: flex; justify-content: space-between; align-items: center; }
-    .app-title { font-size: 18px; font-weight: 800; letter-spacing: -0.2px; }
-    .badge-sync { background: var(--primary-accent); color: #0f290d; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .app-brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .app-logo { width: 46px; height: 46px; border-radius: 12px; object-fit: cover; background: rgba(255,255,255,0.12); box-shadow: 0 4px 10px rgba(0,0,0,0.20); flex: none; }
+    .app-title-wrap { min-width: 0; }
+    .app-title { font-size: 18px; font-weight: 800; letter-spacing: -0.2px; line-height: 1.1; }
+    .app-subtitle { font-size: 11px; color: #dbe7d7; margin-top: 4px; font-weight: 600; letter-spacing: 0.2px; }
+    .badge-sync { background: var(--primary-accent); color: #0f290d; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; white-space: nowrap; flex: none; }
 
     .soldier-input-container {
       margin-top: 10px;
@@ -266,7 +274,7 @@
 
     /* Tab Bar */
     .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 8px 0; z-index: 200; box-shadow: 0 -2px 10px rgba(0,0,0,0.03); }
-    .tab-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--text-muted); font-size: 11px; font-weight: 600; cursor: pointer; width: 25%; }
+    .tab-btn { background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--text-muted); font-size: 11px; font-weight: 600; cursor: pointer; width: 20%; }
     .tab-btn.active { color: var(--primary); }
     .tab-icon { font-size: 18px; }
     .view-content { display: none; }
@@ -278,6 +286,18 @@
     .modal-card { background: #fff; width: 100%; max-width: 440px; border-radius: var(--radius); padding: 18px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
     .modal-title { font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 12px; }
     .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+
+/* Income & expense ledger */
+.money-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.money-stat{padding:14px 8px;text-align:center;border:1px solid var(--border);border-radius:12px;background:white}
+.money-stat small{display:block;font-size:11px;color:var(--text-muted);margin-bottom:6px}.money-stat strong{font-size:16px;overflow-wrap:anywhere}
+.money-stat.positive strong{color:#15803d}.money-stat.negative strong{color:#b91c1c}
+.money-tabs{display:flex;gap:6px;overflow-x:auto;margin:12px 0}.money-month{border:0;background:#f1f5f9;border-radius:10px;padding:9px 12px;color:#64748b;white-space:nowrap;cursor:pointer}.money-month.active{background:#e4f3ff;color:#0876db;font-weight:700}
+.money-donut{width:220px;height:220px;border-radius:50%;margin:18px auto;position:relative;background:#e2e8f0;box-shadow:0 5px 14px #0001}.money-donut:after{content:'';position:absolute;inset:49px;border-radius:50%;background:white;z-index:0}.money-donut-center{position:absolute;inset:52px;z-index:1;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;font-size:12px;color:#64748b}.money-donut-center strong{font-size:18px;color:#0f172a}.money-category{display:flex;align-items:center;gap:9px;border-bottom:1px solid #eef2f7;padding:11px 0}.money-category:last-child{border:0}.money-category-dot{height:11px;width:11px;border-radius:50%;flex:none}.money-category-title{flex:1;font-size:13px;font-weight:600}.money-category-val{font-size:13px;font-weight:700}
+.money-entry{border-bottom:1px solid #edf2f7;padding:12px 0}.money-entry:last-child{border:0}.money-entry-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.money-entry-name{font-weight:700;font-size:14px}.money-entry-sub{font-size:12px;color:#64748b;margin-top:4px;line-height:1.5}.money-entry-actions{display:flex;gap:6px;margin-top:8px}.money-action{border:1px solid #cbd5e1;background:#fff;padding:5px 9px;border-radius:7px;font-size:12px;cursor:pointer}
+.money-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.money-form-grid .full{grid-column:1/-1}.money-form-grid label{margin-bottom:4px}.money-form-grid input,.money-form-grid select{width:100%}.money-modal-card{max-height:88vh;overflow-y:auto}
+@media(max-width:390px){.money-stat strong{font-size:13px}.money-donut{width:190px;height:190px}.money-donut:after{inset:43px}.money-donut-center{inset:47px}}
+
   </style>
 </head>
 <body>
@@ -285,7 +305,13 @@
   <!-- App Header with Name of Soldier -->
   <header>
     <div class="header-top">
-      <div class="app-title">Excelsior Soldier Financial Manager</div>
+      <div class="app-brand">
+        <img src="army-star-logo.png" alt="Excelsior Soldier Financial Manager logo" class="app-logo">
+        <div class="app-title-wrap">
+          <div class="app-title">Excelsior Soldier Financial Manager</div>
+          <div class="app-subtitle">Debt Snowball • Savings • Expenses</div>
+        </div>
+      </div>
       <span class="badge-sync" id="sync-status">Ready</span>
     </div>
     <div class="soldier-input-container">
@@ -420,6 +446,36 @@
       </div>
     </div>
 
+
+    <!-- Income and expenses: calendar-month transaction ledger -->
+    <div id="view-money" class="view-content">
+      <div class="card">
+        <div class="card-title"><span>Income &amp; Expenses</span><span style="font-size:11px;font-weight:500;color:var(--text-muted)">Monthly overview</span></div>
+        <div style="display:flex;align-items:center;gap:8px;justify-content:space-between">
+          <button class="btn-reset" onclick="shiftMoneyMonth(-1)" aria-label="Previous month">◀</button>
+          <strong id="money-month-title">Month</strong>
+          <button class="btn-reset" onclick="shiftMoneyMonth(1)" aria-label="Next month">▶</button>
+        </div>
+        <div class="money-tabs" id="money-month-strip" aria-label="Select month"></div>
+        <div class="money-summary">
+          <div class="money-stat positive"><small>Income</small><strong id="money-income-total">$0</strong></div>
+          <div class="money-stat negative"><small>Expenses</small><strong id="money-expense-total">$0</strong></div>
+          <div class="money-stat"><small>Remaining</small><strong id="money-net-total">$0</strong></div>
+        </div>
+        <div class="money-donut" id="money-donut"><div class="money-donut-center"><strong id="money-donut-total">$0</strong><span>spent this month</span></div></div>
+        <div id="money-category-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span>Expense Tracker</span><button class="btn-add" onclick="openMoneyEntry('expense')">＋ Add Expense</button></div>
+        <div id="money-expenses"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span>Income Tracker</span><button class="btn-add" onclick="openMoneyEntry('income')">＋ Add Income</button></div>
+        <div id="money-incomes"></div>
+      </div>
+      <div class="card" style="font-size:12px;color:var(--text-muted);line-height:1.6">Monthly totals use each entry's payment/receipt date. Daycare projected payments are reminders only and do not count toward expenses until recorded as paid. All entries are saved only in this browser; deleting the app or clearing site data may remove them.</div>
+    </div>
+
   </div>
 
   <!-- Modal for Creating/Editing Debt Accounts -->
@@ -514,6 +570,31 @@
     </div>
   </div>
 
+
+  <div class="modal-overlay" id="moneyModal">
+    <div class="modal-card money-modal-card">
+      <div class="modal-title" id="money-modal-title">Add Expense</div>
+      <input type="hidden" id="money-edit-id">
+      <input type="hidden" id="money-kind">
+      <div class="money-form-grid">
+        <div class="form-group full" id="money-cat-wrapper"><label>Expense category</label><select id="money-category" onchange="changeMoneyCategory()"><option>Child Daycare</option><option>Electricity</option><option>Groceries</option><option>Gas</option><option>Other</option></select></div>
+        <div class="form-group full" id="money-custom-wrapper" style="display:none"><label>New expense category</label><input id="money-custom-category" maxlength="60" placeholder="e.g. Internet, Rent, Insurance"></div>
+        <div class="form-group full"><label id="money-name-label">Expense / payee description</label><input id="money-description" maxlength="100" placeholder="Description"></div>
+        <div class="form-group"><label id="money-amount-label">Amount paid ($)</label><input id="money-amount" type="number" step="0.01" min="0" placeholder="0.00"></div>
+        <div class="form-group"><label id="money-date-label">Payment date</label><input id="money-date" type="date"></div>
+        <div class="form-group full" id="money-daycare-fields" style="display:none">
+          <div class="money-form-grid">
+            <div class="form-group full"><label>Name of daycare payee</label><input id="money-payee" maxlength="100" placeholder="Daycare provider or recipient"></div>
+            <div class="form-group"><label>Days of daycare</label><input id="money-days" type="number" min="0" step="1" placeholder="0"></div>
+            <div class="form-group"><label>Next projected payment ($)</label><input id="money-next-amount" type="number" step="0.01" min="0" placeholder="0.00"></div>
+            <div class="form-group full"><label>Next projected payment date</label><input id="money-next-date" type="date"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions"><button class="btn-reset" onclick="closeMoneyEntry()">Cancel</button><button class="btn-add" onclick="saveMoneyEntry()">Save Entry</button></div>
+    </div>
+  </div>
+
   <!-- Bottom Navigation Tab Bar -->
   <nav class="tab-bar">
     <button class="tab-btn active" onclick="switchTab('dashboard', this)">
@@ -527,6 +608,9 @@
     <button class="tab-btn" onclick="switchTab('savings', this)">
       <span class="tab-icon">💰</span>
       <span>Savings</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('money', this)">
+      <span class="tab-icon">🧾</span><span>Income &amp; Expenses</span>
     </button>
     <button class="tab-btn" onclick="switchTab('schedule', this)">
       <span class="tab-icon">📋</span>
@@ -557,6 +641,9 @@
 
     var debts = JSON.parse(JSON.stringify(DEFAULT_DEBTS));
     var savings = JSON.parse(JSON.stringify(DEFAULT_SAVINGS));
+    var moneyEntries = [];
+    var moneySelectedMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    var moneyColors = ['#1285e8','#ff6b35','#16b4b2','#7c3aed','#d8990d','#e4529c','#5865d8','#39956e'];
     var sliderLoanExtra = 1100;
     var sliderMortgageCurtailment = 1400;
 
@@ -589,6 +676,8 @@
 
       if (tabId === 'dashboard') {
         runDebtSimulation();
+      } else if (tabId === 'money') {
+        renderMoneyTab();
       } else if (tabId === 'savings') {
         renderSavingsList();
         renderSavingsChart();
@@ -631,7 +720,8 @@
         debts: debts,
         savings: savings,
         sliderLoanExtra: sliderLoanExtra,
-        sliderMortgageCurtailment: sliderMortgageCurtailment
+        sliderMortgageCurtailment: sliderMortgageCurtailment,
+        moneyEntries: moneyEntries
       };
       localStorage.setItem('excelsior_soldier_fin_data_v3', JSON.stringify(payload));
       var badge = document.getElementById('sync-status');
@@ -651,6 +741,7 @@
           if (parsed.soldierName) soldierName = parsed.soldierName;
           if (parsed.debts) debts = parsed.debts;
           if (parsed.savings) savings = parsed.savings;
+          if (Array.isArray(parsed.moneyEntries)) moneyEntries = parsed.moneyEntries;
           if (parsed.sliderLoanExtra !== undefined) sliderLoanExtra = parsed.sliderLoanExtra;
           if (parsed.sliderMortgageCurtailment !== undefined) sliderMortgageCurtailment = parsed.sliderMortgageCurtailment;
         } catch (e) {}
@@ -663,6 +754,7 @@
       
       invalidateBaselineCache();
       refreshUI();
+      renderMoneyTab();
     }
 
     function resetToDefaults() {
@@ -671,6 +763,7 @@
       soldierName = "SSG J. Miller";
       debts = JSON.parse(JSON.stringify(DEFAULT_DEBTS));
       savings = JSON.parse(JSON.stringify(DEFAULT_SAVINGS));
+      moneyEntries = [];
       sliderLoanExtra = 1100;
       sliderMortgageCurtailment = 1400;
       document.getElementById('soldier-name').value = soldierName;
@@ -681,6 +774,7 @@
       invalidateBaselineCache();
       refreshUI();
       persistState();
+      renderMoneyTab();
     }
 
     function invalidateBaselineCache() {
@@ -1373,6 +1467,109 @@
       persistState();
     }
 
+
+    // Monthly income and expense ledger. Projected daycare payments are not transactions.
+    function moneyDateKey(date) { return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0'); }
+    function moneyToday() { var d=new Date();return moneyDateKey(d)+'-'+String(d.getDate()).padStart(2,'0'); }
+    function moneySafe(s) { return String(s == null ? '' : s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+    function moneyDollars(n){return '$'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+    function moneyForMonth(entry){return typeof entry.date==='string' && entry.date.slice(0,7)===moneyDateKey(moneySelectedMonth);}
+    function shiftMoneyMonth(n){moneySelectedMonth=new Date(moneySelectedMonth.getFullYear(),moneySelectedMonth.getMonth()+n,1);renderMoneyTab();}
+    function selectMoneyMonth(y,m){moneySelectedMonth=new Date(y,m,1);renderMoneyTab();}
+    function renderMoneyTab(){
+      var title=document.getElementById('money-month-title');if(!title)return;
+      title.textContent=moneySelectedMonth.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+      var months=document.getElementById('money-month-strip');months.innerHTML='';
+      for(var delta=-2;delta<=2;delta++){
+        var date=new Date(moneySelectedMonth.getFullYear(),moneySelectedMonth.getMonth()+delta,1);
+        var b=document.createElement('button');b.className='money-month'+(delta===0?' active':'');b.textContent=date.toLocaleDateString('en-US',{month:'short'});b.onclick=(function(y,m){return function(){selectMoneyMonth(y,m);};})(date.getFullYear(),date.getMonth());months.appendChild(b);
+      }
+      var selected=moneyEntries.filter(moneyForMonth);
+      var income=selected.filter(function(e){return e.kind==='income';});
+      var expenses=selected.filter(function(e){return e.kind==='expense';});
+      var totalIn=income.reduce(function(s,e){return s+Number(e.amount||0);},0);
+      var totalOut=expenses.reduce(function(s,e){return s+Number(e.amount||0);},0);
+      document.getElementById('money-income-total').textContent=moneyDollars(totalIn);
+      document.getElementById('money-expense-total').textContent=moneyDollars(totalOut);
+      var net=totalIn-totalOut;var netEl=document.getElementById('money-net-total');netEl.textContent=(net<0?'-':'')+moneyDollars(Math.abs(net));netEl.style.color=net>=0?'#15803d':'#b91c1c';
+      document.getElementById('money-donut-total').textContent=moneyDollars(totalOut);
+      var grouped={};expenses.forEach(function(e){var k=e.category||'Other';grouped[k]=(grouped[k]||0)+Number(e.amount||0);});
+      var categories=Object.keys(grouped).sort(function(a,b){return grouped[b]-grouped[a];});
+      var stops=[],pct=0;
+      categories.forEach(function(cat,i){var next=pct+grouped[cat]/totalOut*100;stops.push(moneyColors[i%moneyColors.length]+' '+pct.toFixed(3)+'% '+next.toFixed(3)+'%');pct=next;});
+      document.getElementById('money-donut').style.background=totalOut>0?'conic-gradient('+stops.join(', ')+')':'#e2e8f0';
+      var categoryList=document.getElementById('money-category-list');categoryList.innerHTML='';
+      if(!categories.length)categoryList.innerHTML='<div class="item-detail" style="text-align:center;padding:8px">No expenses recorded for this month.</div>';
+      categories.forEach(function(cat,i){var item=document.createElement('div');item.className='money-category';item.innerHTML='<span class="money-category-dot" style="background:'+moneyColors[i%moneyColors.length]+'"></span><div class="money-category-title">'+moneySafe(cat)+' <span style="color:#64748b;font-weight:400">('+Math.round(grouped[cat]/totalOut*100)+'%)</span></div><div class="money-category-val">'+moneyDollars(grouped[cat])+'</div>';categoryList.appendChild(item);});
+      renderMoneyEntries('money-expenses',expenses,'expense');renderMoneyEntries('money-incomes',income,'income');
+    }
+    function renderMoneyEntries(containerId,items,kind){
+      var root=document.getElementById(containerId);root.innerHTML='';
+      if(!items.length){root.innerHTML='<div class="item-detail">No '+(kind==='expense'?'expenses':'income')+' recorded for this month. Use Add to start tracking.</div>';return;}
+      items.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).forEach(function(e){
+        var div=document.createElement('div');div.className='money-entry';
+        var detail=moneySafe(e.date)+(kind==='expense'?' · '+moneySafe(e.category):'');
+        if(e.category==='Child Daycare'){
+          detail+='<div>Payee: '+moneySafe(e.payee||'Not entered')+' · Days: '+Number(e.days||0)+'</div>';
+          if(e.nextDate||e.nextAmount)detail+='<div>Next projected pay: '+moneyDollars(e.nextAmount||0)+(e.nextDate?' on '+moneySafe(e.nextDate):'')+' <em>(not yet counted)</em></div>';
+        }
+        div.innerHTML='<div class="money-entry-top"><div><div class="money-entry-name">'+moneySafe(e.description||e.category||'Entry')+'</div><div class="money-entry-sub">'+detail+'</div></div><strong style="font-size:14px;white-space:nowrap">'+(kind==='income'?'+':'−')+moneyDollars(e.amount)+'</strong></div><div class="money-entry-actions"><button class="money-action" data-action="edit">✏ Edit</button><button class="money-action" data-action="delete">🗑 Delete</button></div>';
+        div.querySelector('[data-action="edit"]').onclick=function(){openMoneyEntry(kind,e.id);};
+        div.querySelector('[data-action="delete"]').onclick=function(){deleteMoneyEntry(e.id);};root.appendChild(div);
+      });
+    }
+    function changeMoneyCategory(){
+      var kind=document.getElementById('money-kind').value;
+      var category=document.getElementById('money-category').value;
+      document.getElementById('money-custom-wrapper').style.display=kind==='expense'&&category==='Other'?'block':'none';
+      document.getElementById('money-daycare-fields').style.display=kind==='expense'&&category==='Child Daycare'?'block':'none';
+    }
+    function openMoneyEntry(kind,id){
+      var e=id?moneyEntries.find(function(x){return x.id===id;}):null;
+      document.getElementById('money-kind').value=kind;
+      document.getElementById('money-edit-id').value=id||'';
+      document.getElementById('money-modal-title').textContent=(e?'Edit ':'Add ')+(kind==='income'?'Income':'Expense');
+      document.getElementById('money-cat-wrapper').style.display=kind==='expense'?'block':'none';
+      document.getElementById('money-name-label').textContent=kind==='income'?'Income source':'Expense description';
+      document.getElementById('money-amount-label').textContent=kind==='income'?'Amount received ($)':'Amount paid ($)';
+      document.getElementById('money-date-label').textContent=kind==='income'?'Date received':'Payment date';
+      var select=document.getElementById('money-category');select.innerHTML='';
+      var base=['Child Daycare','Electricity','Groceries','Gas','Other'];
+      moneyEntries.filter(function(x){return x.kind==='expense';}).forEach(function(x){if(base.indexOf(x.category)<0)base.splice(base.length-1,0,x.category);});
+      if(e&&kind==='expense'&&base.indexOf(e.category)<0)base.splice(base.length-1,0,e.category);
+      base.forEach(function(c){var op=document.createElement('option');op.value=c;op.textContent=c;select.appendChild(op);});
+      select.value=e&&kind==='expense'?e.category:'Child Daycare';
+      ['description','payee','custom-category','next-date'].forEach(function(k){document.getElementById('money-'+k).value='';});
+      ['days','next-amount','amount'].forEach(function(k){document.getElementById('money-'+k).value='';});
+      document.getElementById('money-description').value=e?e.description:'';
+      document.getElementById('money-date').value=e?e.date:moneyToday();
+      document.getElementById('money-amount').value=e?e.amount:'';
+      if(e){document.getElementById('money-payee').value=e.payee||'';document.getElementById('money-days').value=e.days||'';document.getElementById('money-next-amount').value=e.nextAmount||'';document.getElementById('money-next-date').value=e.nextDate||'';}
+      changeMoneyCategory();document.getElementById('moneyModal').classList.add('open');
+    }
+    function closeMoneyEntry(){document.getElementById('moneyModal').classList.remove('open');}
+    function saveMoneyEntry(){
+      var id=document.getElementById('money-edit-id').value,kind=document.getElementById('money-kind').value;
+      var category=kind==='income'?'Income':document.getElementById('money-category').value;
+      if(category==='Other')category=document.getElementById('money-custom-category').value.trim()||'Other';
+      var description=document.getElementById('money-description').value.trim();
+      var amount=Number(document.getElementById('money-amount').value);
+      var date=document.getElementById('money-date').value;
+      if(!description||!date||!Number.isFinite(amount)||amount<=0){alert('Enter a description, a valid date, and a payment amount greater than zero.');return;}
+      var daycare=kind==='expense'&&category==='Child Daycare';
+      var payee=daycare?document.getElementById('money-payee').value.trim():'';
+      var days=daycare?Number(document.getElementById('money-days').value||0):0;
+      var nextAmount=daycare?Number(document.getElementById('money-next-amount').value||0):0;
+      var nextDate=daycare?document.getElementById('money-next-date').value:'';
+      if(daycare&&(!payee||!Number.isInteger(days)||days<0||!Number.isFinite(nextAmount)||nextAmount<0)){alert('Enter the daycare payee and valid non-negative daycare days and projected payment.');return;}
+      var entry={id:id?Number(id):Date.now()+Math.floor(Math.random()*1000),kind:kind,category:category,description:description,amount:amount,date:date,payee:payee,days:days,nextAmount:nextAmount,nextDate:nextDate};
+      var idx=id?moneyEntries.findIndex(function(x){return x.id===Number(id);}):-1;
+      if(idx>=0)moneyEntries[idx]=entry;else moneyEntries.push(entry);
+      moneySelectedMonth=new Date(Number(date.slice(0,4)),Number(date.slice(5,7))-1,1);
+      persistState();closeMoneyEntry();renderMoneyTab();
+    }
+    function deleteMoneyEntry(id){if(!confirm('Delete this transaction?'))return;moneyEntries=moneyEntries.filter(function(x){return x.id!==id;});persistState();renderMoneyTab();}
+
     // High Responsiveness Interactive Slider Listeners
     document.getElementById('slider-extra-loan').addEventListener('input', function(e) {
       sliderLoanExtra = parseInt(e.target.value);
@@ -1391,6 +1588,16 @@
     window.onload = function() {
       loadState();
     };
+  </script>
+  <script>
+    // PWA shell caching; financial entries remain in this device's localStorage.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js').catch(function(err) {
+          console.warn('Offline installation support unavailable:', err);
+        });
+      });
+    }
   </script>
 </body>
 </html>

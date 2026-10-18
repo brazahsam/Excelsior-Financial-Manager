@@ -31,3 +31,31 @@ Static HTML/CSS/JavaScript website using Chart.js and `localStorage`. The existi
 
 ## Install shortcut
 On iPhone: Safari → Share → Add to Home Screen. On Android: Chrome → menu → Add to Home screen. This is a home-screen shortcut and may open in the browser; a fully offline installable PWA requires additional implementation.
+
+
+## Version 2 — Income & Expenses
+- New **Income & Expenses** fifth tab with selectable reporting month, total income, total expense, and net balance.
+- Donut chart breaks actual paid expenses down by category.
+- Default expense categories: **Child Daycare**, **Electricity**, **Groceries**, **Gas**; add unlimited custom categories via **Other**.
+- Daycare logs recorded **days of daycare**, **amount paid**, **payee**, **payment date**, and a separate **next projected payment amount/date**. Future projected amounts are not included in paid expenses until an actual transaction is recorded.
+- Add, edit, and delete income and expenses. Stored under the existing localStorage key alongside the existing debt and savings data.
+- This is **local-only**, not cloud backup; changing browsers, deleting the Home Screen app, or clearing website data can erase entries. Do not enter sensitive actual financial records for operational use without authentication, secured persistence and calculation audits.
+
+### Upgrade an existing GitHub Pages site
+Upload/replace `index.html` and `README.md` in the repository root, commit, and wait for Pages redeployment. Existing localStorage data in the same browser/site origin is preserved by the updated code; back up your data separately before changes.
+
+
+## Included branding
+
+- `army-star-logo.png` — app logo used in the header, browser tab icon, and iPhone home screen icon.
+
+## iPhone and Android install (Version 4 PWA)
+- Files added: `manifest.webmanifest`, `sw.js`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png`, and `favicon-32.png`.
+- **Upload every file in this ZIP to the repository root**; do not upload the ZIP as one file. Keep `index.html` named exactly that.
+- Ensure GitHub Pages is enabled for `main` / `(root)`. The app must be accessed over HTTPS (the normal `github.io` URL).
+- iPhone: open the GitHub Pages URL in **Safari** → Share → **Add to Home Screen** → enable **Open as Web App** when offered → Add.
+- Android: open in **Chrome** → menu → **Install app** (or **Add to Home screen** when offered).
+- If an older shortcut continues to use an old icon, remove only the Home Screen shortcut and add it again; **this may erase local-only app data**, so export/backup first. You can alternatively wait for icon refresh without deleting.
+- Offline use: the main HTML and visual assets are precached; Chart.js is cached after it is fetched online. Offline behavior can depend on first-load and browser storage policies, so test it before relying on it.
+- **Not cloud synced:** Financial data is still stored using localStorage, not in a secure account. Deleting/clearing website data may permanently delete entries. Do not enter sensitive personal financial information into this demo.
+- For a production app used by other soldiers, add authentication, segregated encrypted cloud storage, security rules, backup/recovery, and financial-model validation.
