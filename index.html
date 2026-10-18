@@ -304,6 +304,12 @@
     .backup-status{font-size:12px;line-height:1.6;background:#f1f5f9;border-radius:9px;padding:10px;color:#334155;white-space:pre-wrap}
     .security-group{margin:10px 0}
     .security-group input{margin-top:5px}
+
+    /* Monthly personal budget journal: stored with existing financial data */
+    .budget-note-pad { background:#fffdf4; border:1px solid #eadfb4; border-radius:12px; padding:14px; }
+    .budget-note-pad textarea { display:block; width:100%; min-height:170px; padding:13px 14px; border:1px solid #ded6b8; border-radius:8px; resize:vertical; background:repeating-linear-gradient(#fffdf4 0px,#fffdf4 29px,#eee7d0 30px); line-height:30px; font-size:15px; color:#243245; outline-color:#86c07b; font-family:inherit; }
+    .budget-note-hint { color:#64748b; font-size:12px; line-height:1.5; margin:8px 0 12px; }
+    .budget-note-status { font-size:12px; color:#166534; margin-top:8px; min-height:18px; }
   </style>
   <style>
     #pin-gate{position:fixed;inset:0;z-index:9999;background:linear-gradient(150deg,#122b14,#1e3a1e);display:flex;align-items:center;justify-content:center;padding:20px;color:white}
@@ -502,6 +508,15 @@
         <div class="card-title"><span>Income Tracker</span><button class="btn-add" onclick="openMoneyEntry('income')">＋ Add Income</button></div>
         <div id="money-incomes"></div>
       </div>
+      <div class="card" id="personal-budget-notes-card">
+        <div class="card-title"><span>📝 My Budget Notes</span><span class="item-badge savings">Personal Journal</span></div>
+        <div class="budget-note-pad">
+          <label for="budget-note-text" id="budget-note-label">Notes for this month</label>
+          <p class="budget-note-hint">Write reminders, upcoming expenses, income plans, daycare arrangements, or anything you want to remember. Notes are organized by the selected month and saved automatically on this device.</p>
+          <textarea id="budget-note-text" maxlength="10000" placeholder="My budget notes…&#10;• Upcoming bills&#10;• Daycare payments&#10;• Savings priorities" aria-describedby="budget-note-status"></textarea>
+          <div id="budget-note-status" class="budget-note-status" role="status" aria-live="polite">Ready to write.</div>
+        </div>
+      </div>
       <div class="card" style="font-size:12px;color:var(--text-muted);line-height:1.6">Monthly totals use each entry's payment/receipt date. Daycare projected payments are reminders only and do not count toward expenses until recorded as paid. All entries are saved only in this browser; deleting the app or clearing site data may remove them.</div>
     </div>
 
@@ -698,6 +713,7 @@
     var debts = JSON.parse(JSON.stringify(DEFAULT_DEBTS));
     var savings = JSON.parse(JSON.stringify(DEFAULT_SAVINGS));
     var moneyEntries = [];
+    var moneyNotes = {}; // Notes organized by YYYY-MM; included in encrypted backup
     var moneySelectedMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     var moneyColors = ['#1285e8','#ff6b35','#16b4b2','#7c3aed','#d8990d','#e4529c','#5865d8','#39956e'];
     var sliderLoanExtra = 1100;
@@ -777,7 +793,8 @@
         savings: savings,
         sliderLoanExtra: sliderLoanExtra,
         sliderMortgageCurtailment: sliderMortgageCurtailment,
-        moneyEntries: moneyEntries
+        moneyEntries: moneyEntries,
+        moneyNotes: moneyNotes
       };
       localStorage.setItem('excelsior_soldier_fin_data_v3', JSON.stringify(payload));
       window.dispatchEvent(new Event('excelsior:changed'));
@@ -799,6 +816,7 @@
           if (parsed.debts) debts = parsed.debts;
           if (parsed.savings) savings = parsed.savings;
           if (Array.isArray(parsed.moneyEntries)) moneyEntries = parsed.moneyEntries;
+          if (parsed.moneyNotes && typeof parsed.moneyNotes === "object" && !Array.isArray(parsed.moneyNotes)) moneyNotes = parsed.moneyNotes;
           if (parsed.sliderLoanExtra !== undefined) sliderLoanExtra = parsed.sliderLoanExtra;
           if (parsed.sliderMortgageCurtailment !== undefined) sliderMortgageCurtailment = parsed.sliderMortgageCurtailment;
         } catch (e) {}
@@ -821,6 +839,7 @@
       debts = JSON.parse(JSON.stringify(DEFAULT_DEBTS));
       savings = JSON.parse(JSON.stringify(DEFAULT_SAVINGS));
       moneyEntries = [];
+      moneyNotes = {};
       sliderLoanExtra = 1100;
       sliderMortgageCurtailment = 1400;
       document.getElementById('soldier-name').value = soldierName;
@@ -1533,6 +1552,21 @@
     function moneyForMonth(entry){return typeof entry.date==='string' && entry.date.slice(0,7)===moneyDateKey(moneySelectedMonth);}
     function shiftMoneyMonth(n){moneySelectedMonth=new Date(moneySelectedMonth.getFullYear(),moneySelectedMonth.getMonth()+n,1);renderMoneyTab();}
     function selectMoneyMonth(y,m){moneySelectedMonth=new Date(y,m,1);renderMoneyTab();}
+    function renderMoneyNote(){
+      var field=document.getElementById('budget-note-text');if(!field)return;
+      var key=moneyDateKey(moneySelectedMonth);
+      field.value=typeof moneyNotes[key]==='string'?moneyNotes[key]:'';
+      document.getElementById('budget-note-label').textContent='Notes for '+moneySelectedMonth.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+      document.getElementById('budget-note-status').textContent=field.value?'Saved on this device':'Ready to write';
+    }
+    function saveMoneyNote(){
+      var field=document.getElementById('budget-note-text');if(!field)return;
+      var key=moneyDateKey(moneySelectedMonth);
+      if(field.value.trim())moneyNotes[key]=field.value;
+      else delete moneyNotes[key];
+      persistState();
+      document.getElementById('budget-note-status').textContent='✓ Saved on this device · included in future encrypted backups';
+    }
     function renderMoneyTab(){
       var title=document.getElementById('money-month-title');if(!title)return;
       title.textContent=moneySelectedMonth.toLocaleDateString('en-US',{month:'long',year:'numeric'});
@@ -1559,6 +1593,7 @@
       if(!categories.length)categoryList.innerHTML='<div class="item-detail" style="text-align:center;padding:8px">No expenses recorded for this month.</div>';
       categories.forEach(function(cat,i){var item=document.createElement('div');item.className='money-category';item.innerHTML='<span class="money-category-dot" style="background:'+moneyColors[i%moneyColors.length]+'"></span><div class="money-category-title">'+moneySafe(cat)+' <span style="color:#64748b;font-weight:400">('+Math.round(grouped[cat]/totalOut*100)+'%)</span></div><div class="money-category-val">'+moneyDollars(grouped[cat])+'</div>';categoryList.appendChild(item);});
       renderMoneyEntries('money-expenses',expenses,'expense');renderMoneyEntries('money-incomes',income,'income');
+      renderMoneyNote();
     }
     function renderMoneyEntries(containerId,items,kind){
       var root=document.getElementById(containerId);root.innerHTML='';
@@ -1626,6 +1661,8 @@
       persistState();closeMoneyEntry();renderMoneyTab();
     }
     function deleteMoneyEntry(id){if(!confirm('Delete this transaction?'))return;moneyEntries=moneyEntries.filter(function(x){return x.id!==id;});persistState();renderMoneyTab();}
+
+    document.getElementById('budget-note-text').addEventListener('input', saveMoneyNote);
 
     // High Responsiveness Interactive Slider Listeners
     document.getElementById('slider-extra-loan').addEventListener('input', function(e) {

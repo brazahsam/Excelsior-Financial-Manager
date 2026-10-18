@@ -38,3 +38,10 @@ Encrypted manual backups and cloud backups now accept numeric 4–12 digit PINs.
 - Missing `moneyEntries` is treated as an empty array for export, without changing saved debts or savings.
 - Backup restore also accepts valid earlier data and normalizes missing optional fields.
 - Do not delete the installed app or clear site data before successfully exporting and verifying a backup.
+
+## Version 7: Monthly budget notes
+
+- On **Income & Expenses**, use **My Budget Notes** to type personal reminders for the selected month.
+- Notes are saved automatically in local browser storage under `moneyNotes` and are included in newly exported encrypted backups.
+- Switching months displays the corresponding note. Earlier backups remain compatible (notes default to empty).
+- No cloud synchronization occurs until the Firebase integration is configured and enabled.

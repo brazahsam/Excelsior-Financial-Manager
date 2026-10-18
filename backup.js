@@ -39,6 +39,8 @@
     if (d.moneyEntries === undefined || d.moneyEntries === null) d.moneyEntries = [];
     if (!Array.isArray(d.moneyEntries))
       throw Error('Saved income/expense entries are damaged.');
+    if (d.moneyNotes === undefined || d.moneyNotes === null) d.moneyNotes = {};
+    if (typeof d.moneyNotes !== 'object' || Array.isArray(d.moneyNotes)) throw Error('Saved personal notes are damaged.');
     if (typeof d.soldierName !== 'string')
       d.soldierName = document.getElementById('soldier-name')?.value || 'Soldier';
     if (!Number.isFinite(d.sliderLoanExtra))
