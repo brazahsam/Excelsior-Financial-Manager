@@ -28,16 +28,44 @@
       return JSON.parse(dec.decode(plain));
     }catch(e){throw Error('Incorrect backup PIN/password or damaged backup file.');}
   }
+  // Legacy app versions did not always save a moneyEntries field. Normalize old
+  // records in memory for export; never remove or overwrite existing entries.
+  function normalize(data){
+    if (!data || typeof data !== 'object' || Array.isArray(data))
+      throw Error('Saved data has an invalid structure.');
+    const d = {...data};
+    if (!Array.isArray(d.debts) || !Array.isArray(d.savings))
+      throw Error('Saved debts or savings data is missing or damaged.');
+    if (d.moneyEntries === undefined || d.moneyEntries === null) d.moneyEntries = [];
+    if (!Array.isArray(d.moneyEntries))
+      throw Error('Saved income/expense entries are damaged.');
+    if (typeof d.soldierName !== 'string')
+      d.soldierName = document.getElementById('soldier-name')?.value || 'Soldier';
+    if (!Number.isFinite(d.sliderLoanExtra))
+      d.sliderLoanExtra = Number(document.getElementById('slider-extra-loan')?.value || 0);
+    if (!Number.isFinite(d.sliderMortgageCurtailment))
+      d.sliderMortgageCurtailment = Number(document.getElementById('slider-extra-mortgage')?.value || 0);
+    return d;
+  }
   function valid(data){
-    return !!(data&&typeof data==='object'&&Array.isArray(data.debts)&&Array.isArray(data.savings)&&Array.isArray(data.moneyEntries)&&typeof data.soldierName==='string'&&Number.isFinite(data.sliderLoanExtra)&&Number.isFinite(data.sliderMortgageCurtailment));
+    try {
+      const d = normalize(data);
+      return typeof d.soldierName === 'string' &&
+        Number.isFinite(d.sliderLoanExtra) && Number.isFinite(d.sliderMortgageCurtailment);
+    } catch (_) { return false; }
   }
   function getData(){
     const raw=localStorage.getItem(KEY);
-    if(!raw)throw Error('No stored data found. Open the app and save an entry first.');
-    const d=JSON.parse(raw);if(!valid(d))throw Error('Stored data is missing required fields.');return d;
+    if(!raw)throw Error('No saved financial data found. Save an entry in the app first, then try again.');
+    let d;
+    try { d=JSON.parse(raw); } catch (_) { throw Error('Saved financial data is damaged or not valid JSON.'); }
+    d=normalize(d);
+    if(!valid(d))throw Error('Saved financial data could not be validated.');
+    return d;
   }
-  function restoreData(d){
-    if(!valid(d))throw Error('Backup does not contain valid Excelsior financial data.');
+  function restoreData(data){
+    if(!valid(data))throw Error('Backup does not contain valid Excelsior financial data.');
+    const d=normalize(data);
     if(!confirm('Restore backup? This will REPLACE all current debts, savings, income and expense records on this device. Export a backup first if you want to preserve them.'))return false;
     localStorage.setItem(KEY,JSON.stringify(d));
     location.reload();return true;

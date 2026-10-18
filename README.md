@@ -30,3 +30,11 @@ Open **Backup** tab, create a 4–12 digit numeric PIN, confirm and click **Expo
 On first launch, create a 4–12 digit numeric app access PIN and confirm it. Subsequent launches ask for it. This is a **convenience screen lock only**, not encryption of local financial data. The PIN verifier is stored locally and offers limited defense; the app is still **not approved for sensitive financial data**. There is no PIN recovery mechanism in this demo; do not delete browser storage without a tested backup.
 
 Encrypted manual backups and cloud backups now accept numeric 4–12 digit PINs. **A 4-digit PIN is highly susceptible to guessing and is not appropriate for sensitive data**. We strongly advise 8–12 unpredictable digits, or upgrading to longer passphrases. Files exported with the older v5 12+ character passphrase remain importable using that original passphrase; however, the numeric-only PIN field in v6 may need an older restore utility to enter it. Firebase Authentication account passwords are separate and still subject to Firebase security requirements.
+
+
+## Version 6.1 backup compatibility fix
+
+- Fixed "Stored data is missing required fields" for local records saved before Income & Expenses was introduced.
+- Missing `moneyEntries` is treated as an empty array for export, without changing saved debts or savings.
+- Backup restore also accepts valid earlier data and normalizes missing optional fields.
+- Do not delete the installed app or clear site data before successfully exporting and verifying a backup.
