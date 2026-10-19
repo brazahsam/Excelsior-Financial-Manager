@@ -45,3 +45,18 @@ Encrypted manual backups and cloud backups now accept numeric 4–12 digit PINs.
 - Notes are saved automatically in local browser storage under `moneyNotes` and are included in newly exported encrypted backups.
 - Switching months displays the corresponding note. Earlier backups remain compatible (notes default to empty).
 - No cloud synchronization occurs until the Firebase integration is configured and enabled.
+
+## Version 8 — Snowball and Avalanche
+
+- Dashboard offers a **Debt Repayment Strategy** selector: Snowball (smallest balance) or Avalanche (highest APR).
+- Selection is saved with the existing local data record and therefore included in new encrypted backups. Older saved data defaults to Snowball.
+- Charts, repayment priority, payoff projections, and schedule respond to changes.
+- Minimum payments apply first; unused payoff funds roll to the selected nonmortgage debt, then mortgages once nonmortgage balances clear. Mortgage slider is applied separately.
+- Projection assumes fixed monthly payments, fixed APRs and monthly interest (up to 360 months). Beyond-horizon debts are labeled as such.
+- Caution: Debt payoff estimates are planning illustrations, not lender payoff statements. Check escrow, compounding rules, fees, minimums, due dates and rounding independently.
+
+## Version 9 — Side-by-side method comparison
+- Shows Snowball versus Avalanche payoff time, projected completion month, interest and initial repayment priority using identical debt and payment settings.
+- Selecting a method updates the existing repayment strategy and local persistence.
+- The comparison assumes the existing 30-year projection ceiling; it flags incomplete simulations rather than treating 30 years as a payoff date.
+- Existing financial records, PIN, backups, savings, expenses, notes and PWA assets are unchanged.

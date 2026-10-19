@@ -310,6 +310,19 @@
     .budget-note-pad textarea { display:block; width:100%; min-height:170px; padding:13px 14px; border:1px solid #ded6b8; border-radius:8px; resize:vertical; background:repeating-linear-gradient(#fffdf4 0px,#fffdf4 29px,#eee7d0 30px); line-height:30px; font-size:15px; color:#243245; outline-color:#86c07b; font-family:inherit; }
     .budget-note-hint { color:#64748b; font-size:12px; line-height:1.5; margin:8px 0 12px; }
     .budget-note-status { font-size:12px; color:#166534; margin-top:8px; min-height:18px; }
+
+    /* Side-by-side repayment comparison */
+    .compare-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .compare-panel{border:1px solid var(--border);border-radius:12px;padding:13px;background:#f8fafc;min-width:0}
+    .compare-panel.chosen{border:2px solid var(--primary-accent);background:#f3faf1}
+    .compare-panel h3{font-size:15px;color:var(--primary);margin-bottom:6px}
+    .compare-panel .compare-metric{border-bottom:1px solid var(--border);padding:8px 0}
+    .compare-panel .compare-label{font-size:11px;color:var(--text-muted);display:block;margin-bottom:3px}
+    .compare-panel strong{font-size:15px;overflow-wrap:anywhere}
+    .compare-panel ol{padding-left:19px;font-size:12px;line-height:1.55;margin-top:7px}
+    .compare-panel li{padding:3px 0;overflow-wrap:anywhere}
+    .compare-note{margin-top:10px;color:var(--text-muted);font-size:12px;line-height:1.5}
+    @media (max-width:360px){.compare-grid{gap:6px}.compare-panel{padding:9px}.compare-panel strong{font-size:13px}}
   </style>
   <style>
     #pin-gate{position:fixed;inset:0;z-index:9999;background:linear-gradient(150deg,#122b14,#1e3a1e);display:flex;align-items:center;justify-content:center;padding:20px;color:white}
@@ -365,7 +378,7 @@
         <div class="time-saved-label">Time saved from debt freedom</div>
         <div class="time-saved-row">
           <div class="time-saved-val" id="disp-time-saved">17 yr 2 mo earlier</div>
-          <span class="badge-accelerated">Accelerated payoff</span>
+          <span class="badge-accelerated" id="repayment-method-badge">Snowball payoff</span>
         </div>
         <div class="interest-saved-sub">Total interest saved: <b id="disp-interest-saved">$194,875</b></div>
 
@@ -373,7 +386,7 @@
         <div class="chart-legend-row">
           <div class="legend-item" style="color: var(--blue-accent);">
             <div class="legend-line-solid"></div>
-            <span>Accelerated snowball</span>
+            <span id="repayment-strategy-legend">Accelerated snowball</span>
           </div>
           <div class="legend-item" style="color: #64748b;">
             <div class="legend-line-dashed"></div>
@@ -402,9 +415,20 @@
           </div>
         </div>
 
+        <!-- Repayment strategy selector: existing Snowball remains default for saved users -->
+        <div class="card" style="border:1px solid #cbd5e1;margin:14px 0;background:#f8fafc">
+          <div class="card-title" style="margin-bottom:8px">Debt Repayment Strategy</div>
+          <label for="repayment-method">Choose your payoff priority</label>
+          <select id="repayment-method" onchange="changeRepaymentMethod(this.value)">
+            <option value="snowball">Snowball — Smallest balance first</option>
+            <option value="avalanche">Avalanche — Highest interest rate first</option>
+          </select>
+          <p id="repayment-method-help" style="font-size:12px;color:#475569;margin-top:8px" aria-live="polite">Snowball prioritizes the smallest outstanding debt to create faster wins.</p>
+        </div>
+
         <!-- Dual Interactive Sliders -->
         <div class="slider-row">
-          <label for="slider-extra-loan">Additional credit card monthly payment</label>
+          <label for="slider-extra-loan">Additional monthly debt repayment</label>
           <div class="slider-flex-control">
             <input type="range" id="slider-extra-loan" min="0" max="3000" step="25" value="1100">
             <div class="slider-amount-display" id="disp-loan-slider">$1100/mo</div>
@@ -423,6 +447,32 @@
           <button class="btn-reset" onclick="resetToDefaults()">Reset Default Accounts</button>
         </div>
       </div>
+
+      <!-- Side-by-side method comparison: same balances and total payments for both -->
+      <section class="card" id="method-comparison" aria-label="Snowball versus Avalanche comparison">
+        <div class="card-title">Snowball vs. Avalanche</div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Compare both methods with your current debt balances, monthly payments, extras and mortgage curtailment.</p>
+        <div class="compare-grid">
+          <div class="compare-panel" id="compare-snowball">
+            <h3>❄ Snowball</h3>
+            <div class="compare-metric"><span class="compare-label">Total payoff time</span><strong id="compare-snowball-time">—</strong></div>
+            <div class="compare-metric"><span class="compare-label">Projected payoff date</span><strong id="compare-snowball-date">—</strong></div>
+            <div class="compare-metric"><span class="compare-label">Total projected interest</span><strong id="compare-snowball-interest">—</strong></div>
+            <div class="compare-metric"><span class="compare-label">Repayment priority (initial)</span><ol id="compare-snowball-order"></ol></div>
+            <button class="btn-add" style="width:100%;margin-top:10px" type="button" onclick="setComparisonMethod('snowball')">Choose Snowball</button>
+          </div>
+          <div class="compare-panel" id="compare-avalanche">
+            <h3>⛰ Avalanche</h3>
+            <div class="compare-metric"><span class="compare-label">Total payoff time</span><strong id="compare-avalanche-time">—</strong></div>
+            <div class="compare-metric"><span class="compare-label">Projected payoff date</span><strong id="compare-avalanche-date">—</strong></div>
+            <div class="compare-metric"><span class="compare-label">Total projected interest</span><strong id="compare-avalanche-interest">—</strong></div>
+            <div class="compare-metric"><span class="compare-label">Repayment priority (initial)</span><ol id="compare-avalanche-order"></ol></div>
+            <button class="btn-add" style="width:100%;margin-top:10px" type="button" onclick="setComparisonMethod('avalanche')">Choose Avalanche</button>
+          </div>
+        </div>
+        <p id="compare-difference" style="font-size:13px;font-weight:700;margin-top:12px" aria-live="polite"></p>
+        <p class="compare-note">Projection assumes fixed APRs, constant monthly payment settings and interest compounded monthly. Mortgages are prioritized after non-mortgage debts; their designated extra curtailment is applied separately. A 30-year projection limit applies. Dates are approximate, not lender payoff quotes.</p>
+      </section>
 
       <!-- Chart 2: Remaining Balance vs Timeline (Min Only vs Min + Extra) -->
       <div class="card">
@@ -475,7 +525,7 @@
       <div class="card">
         <div class="card-title">
           <span>Accelerated Payoff Sequence</span>
-          <span style="font-size: 11.5px; color: var(--primary); font-weight: 600;">Snowball Priority</span>
+          <span id="repayment-schedule-priority" style="font-size: 11.5px; color: var(--primary); font-weight: 600;">Snowball Priority</span>
         </div>
         <div class="item-list" id="payoff-order-list"></div>
       </div>
@@ -716,6 +766,7 @@
     var moneyNotes = {}; // Notes organized by YYYY-MM; included in encrypted backup
     var moneySelectedMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
     var moneyColors = ['#1285e8','#ff6b35','#16b4b2','#7c3aed','#d8990d','#e4529c','#5865d8','#39956e'];
+    var repaymentMethod = 'snowball'; // Persisted with debt/savings and encrypted backups
     var sliderLoanExtra = 1100;
     var sliderMortgageCurtailment = 1400;
 
@@ -793,6 +844,7 @@
         savings: savings,
         sliderLoanExtra: sliderLoanExtra,
         sliderMortgageCurtailment: sliderMortgageCurtailment,
+        repaymentMethod: repaymentMethod,
         moneyEntries: moneyEntries,
         moneyNotes: moneyNotes
       };
@@ -817,11 +869,14 @@
           if (parsed.savings) savings = parsed.savings;
           if (Array.isArray(parsed.moneyEntries)) moneyEntries = parsed.moneyEntries;
           if (parsed.moneyNotes && typeof parsed.moneyNotes === "object" && !Array.isArray(parsed.moneyNotes)) moneyNotes = parsed.moneyNotes;
+          if (parsed.repaymentMethod === 'avalanche' || parsed.repaymentMethod === 'snowball') repaymentMethod = parsed.repaymentMethod;
           if (parsed.sliderLoanExtra !== undefined) sliderLoanExtra = parsed.sliderLoanExtra;
           if (parsed.sliderMortgageCurtailment !== undefined) sliderMortgageCurtailment = parsed.sliderMortgageCurtailment;
         } catch (e) {}
       }
       document.getElementById('soldier-name').value = soldierName;
+      document.getElementById('repayment-method').value = repaymentMethod;
+      updateRepaymentLabels();
       document.getElementById('slider-extra-loan').value = sliderLoanExtra;
       document.getElementById('slider-extra-mortgage').value = sliderMortgageCurtailment;
       document.getElementById('disp-loan-slider').innerText = formatCurrency(sliderLoanExtra) + "/mo";
@@ -842,6 +897,9 @@
       moneyNotes = {};
       sliderLoanExtra = 1100;
       sliderMortgageCurtailment = 1400;
+      repaymentMethod = 'snowball';
+      document.getElementById('repayment-method').value = repaymentMethod;
+      updateRepaymentLabels();
       document.getElementById('soldier-name').value = soldierName;
       document.getElementById('slider-extra-loan').value = sliderLoanExtra;
       document.getElementById('slider-extra-mortgage').value = sliderMortgageCurtailment;
@@ -865,110 +923,157 @@
       renderSavingsChart();
     }
 
+    function updateRepaymentLabels() {
+      var avalanche = repaymentMethod === 'avalanche';
+      var method = avalanche ? 'Avalanche' : 'Snowball';
+      var set = function(id, label){var el = document.getElementById(id);if(el) el.textContent=label;};
+      set('repayment-method-help', avalanche
+        ? 'Avalanche pays the highest APR first, generally reducing interest when the payment budget is unchanged.'
+        : 'Snowball pays the smallest outstanding balance first to build repayment momentum.');
+      set('repayment-method-badge', method + ' payoff');
+      set('repayment-strategy-legend', 'Accelerated ' + method.toLowerCase());
+      set('repayment-schedule-priority', method + ' Priority');
+    }
+
+    function changeRepaymentMethod(method) {
+      repaymentMethod = method === 'avalanche' ? 'avalanche' : 'snowball';
+      updateRepaymentLabels();
+      invalidateBaselineCache();
+      runDebtSimulation();
+      persistState();
+    }
+
     // High Precision Month-by-Month Compound Amortization Engine
     function calculateAmortization(accountList, options) {
+      // Monthly interest, minimums, then a single strategy-directed extra-payment pool.
+      // This model assumes fixed APRs, fixed payments, and monthly compounding.
       var accounts = accountList.map(function(d) {
         return {
-          id: d.id,
-          name: d.name,
-          type: d.type,
-          balance: d.balance,
-          rate: d.rate,
-          minPayment: d.payment,
-          extraPayment: d.type === 'Mortgage' ? 0 : (d.extraPayment || 0),
-          curtailment: d.type === 'Mortgage' ? (d.curtailment || 0) : 0,
-          totalInterestPaid: 0,
-          payoffMonth: null
+          id:d.id, name:d.name, type:d.type,
+          balance:Math.max(0,Number(d.balance)||0),
+          rate:Math.max(0,Number(d.rate)||0),
+          minPayment:Math.max(0,Number(d.payment)||0),
+          extraPayment:d.type==='Mortgage'?0:Math.max(0,Number(d.extraPayment)||0),
+          curtailment:d.type==='Mortgage'?Math.max(0,Number(d.curtailment)||0):0,
+          totalInterestPaid:0, payoffMonth:null
         };
       });
-
-      var maxHorizon = 360; // 30 Years
-      var totalStart = accounts.reduce(function(sum, a) { return sum + a.balance; }, 0);
-      var points = [{ x: 0, y: Math.round(totalStart) }];
-      var freedSnowballPool = 0;
+      var monthsLimit=360;
+      var totalStart=accounts.reduce(function(t,a){return t+a.balance;},0);
+      var points=[{x:0,y:Math.round(totalStart)}];
       var ccPayoffMonth = 0;
-
-      for (var m = 1; m <= maxHorizon; m++) {
-        var activeNonMortgage = accounts.filter(function(a) { return a.type !== 'Mortgage' && a.balance > 0.01; });
-        var activeMortgage = accounts.filter(function(a) { return a.type === 'Mortgage' && a.balance > 0.01; });
-
-        if (activeNonMortgage.length === 0 && ccPayoffMonth === 0) {
-          ccPayoffMonth = m - 1;
-        }
-
-        if (activeNonMortgage.length === 0 && activeMortgage.length === 0) {
-          break;
-        }
-
-        activeNonMortgage.sort(function(a, b) { return a.balance - b.balance; }); // Lowest balance first (Snowball)
-
-        var monthlyBalance = 0;
-
-        accounts.forEach(function(acc) {
-          if (acc.balance <= 0.01) return;
-
-          // Accrue compound monthly interest
-          var interest = acc.balance * (acc.rate / 12.0);
-          acc.balance += interest;
-          acc.totalInterestPaid += interest;
-
-          // Standard baseline minimum
-          var payment = acc.minPayment;
-
-          // Individual account level extra payment or curtailment
-          if (options.applyAccountExtras) {
-            if (acc.type === 'Mortgage') {
-              payment += acc.curtailment;
-            } else {
-              payment += acc.extraPayment;
-            }
-          }
-
-          // Mortgage Curtailment Slider bonus
-          if (acc.type === 'Mortgage' && options.addlMortgageCurtailment) {
-            payment += options.addlMortgageCurtailment;
-          }
-
-          // Accelerated Snowball Cascade + Credit Card Slider bonus
-          if (options.enableSnowballCascade) {
-            if (acc.type !== 'Mortgage' && activeNonMortgage.length > 0 && acc.id === activeNonMortgage[0].id) {
-              payment += (options.addlLoanMonthly || 0) + freedSnowballPool;
-            } else if (acc.type === 'Mortgage' && activeNonMortgage.length === 0) {
-              // Crucial Snowball Rollover: once credit cards/loans are paid off,
-              // ALL extra cash and freed monthly payments cascade into the mortgage!
-              payment += (options.addlLoanMonthly || 0) + freedSnowballPool;
-            }
-          }
-
-          if (payment >= acc.balance) {
-            if (options.enableSnowballCascade) {
-              freedSnowballPool += (acc.minPayment + (options.applyAccountExtras ? (acc.type === 'Mortgage' ? acc.curtailment : acc.extraPayment) : 0));
-            }
-            acc.balance = 0;
-            if (!acc.payoffMonth) {
-              acc.payoffMonth = m;
-            }
-          } else {
-            acc.balance -= payment;
-          }
-
-          monthlyBalance += acc.balance;
+      var strategy = options.repaymentMethod === 'avalanche' ? 'avalanche' : 'snowball';
+      var incomplete=false;
+      var budgetMinimums = accounts.reduce(function(t,a){return t+(a.balance>0.01?a.minPayment:0);},0);
+      var budgetAccountExtras = options.applyAccountExtras
+        ? accounts.reduce(function(t,a){return t+a.extraPayment+a.curtailment;},0) : 0;
+      var strategyExtra = options.enableSnowballCascade ? Math.max(0,Number(options.addlLoanMonthly)||0) : 0;
+      var mortgageExtra = Math.max(0,Number(options.addlMortgageCurtailment)||0);
+      // Funds stay in the strategy pool as minimum payments become available.
+      for(var m=1;m<=monthsLimit;m++){
+        var active=accounts.filter(function(a){return a.balance>0.01;});
+        if(!active.length) break;
+        if(!ccPayoffMonth && !active.some(function(a){return a.type!=='Mortgage';})) ccPayoffMonth=m-1;
+        active.forEach(function(a){
+          var interest=a.balance*(a.rate/12);
+          a.balance+=interest;
+          a.totalInterestPaid+=interest;
         });
-
-        points.push({ x: m, y: Math.round(monthlyBalance) });
-        if (monthlyBalance <= 0) break;
+        // Pay all active minimums first. Under the strategy, unused budget is rolled forward.
+        var paid=0;
+        active.forEach(function(a){
+          var applied=Math.min(a.balance,a.minPayment);
+          a.balance-=applied;paid+=applied;
+          if(a.balance<=0.01){a.balance=0;a.payoffMonth=m;}
+        });
+        if(options.enableSnowballCascade){
+          // Individual account extras and freed minimums are pooled into the selected
+          // priority. A dedicated mortgage curtailment stays earmarked for mortgages.
+          var mortgageActive=accounts.filter(function(a){return a.type==='Mortgage'&&a.balance>0.01;});
+          var mortgageSpend=mortgageExtra;
+          if(mortgageActive.length){
+            mortgageActive.sort(function(a,b){return a.balance-b.balance;});
+            mortgageActive.forEach(function(a){var v=Math.min(a.balance,mortgageSpend);a.balance-=v;mortgageSpend-=v;if(a.balance<=0.01){a.balance=0;a.payoffMonth=m;}});
+          }
+          var available=Math.max(0,budgetMinimums+budgetAccountExtras+strategyExtra-paid);
+          var eligible=accounts.filter(function(a){return a.balance>0.01&&a.type!=='Mortgage';});
+          if(!eligible.length) eligible=accounts.filter(function(a){return a.balance>0.01;});
+          eligible.sort(function(a,b){
+            if(strategy==='avalanche') return b.rate-a.rate || a.balance-b.balance || String(a.id).localeCompare(String(b.id));
+            return a.balance-b.balance || b.rate-a.rate || String(a.id).localeCompare(String(b.id));
+          });
+          eligible.forEach(function(a){
+            if(available<=0)return;
+            var amount=Math.min(a.balance,available);a.balance-=amount;available-=amount;
+            if(a.balance<=0.01){a.balance=0;a.payoffMonth=m;}
+          });
+        } else if(options.applyAccountExtras){
+          active.forEach(function(a){
+            if(a.balance<=0.01)return;
+            var amount=Math.min(a.balance,a.extraPayment+a.curtailment);
+            a.balance-=amount;
+            if(a.balance<=0.01){a.balance=0;a.payoffMonth=m;}
+          });
+        }
+        var total=accounts.reduce(function(t,a){return t+a.balance;},0);
+        points.push({x:m,y:Math.round(total)});
+        if(total<=0.01)break;
       }
-
-      var totalInterest = accounts.reduce(function(sum, a) { return sum + a.totalInterestPaid; }, 0);
-      var totalMonths = points.length - 1;
-
+      var outstanding=accounts.reduce(function(t,a){return t+a.balance;},0);
+      incomplete=outstanding>0.01;
       return {
-        points: points,
-        totalInterest: totalInterest,
-        monthsToDebtFree: totalMonths,
-        ccPayoffMonths: ccPayoffMonth || totalMonths,
-        accounts: accounts
+        points:points,
+        totalInterest:accounts.reduce(function(t,a){return t+a.totalInterestPaid;},0),
+        monthsToDebtFree:incomplete?null:(points.length-1),
+        ccPayoffMonths:ccPayoffMonth || (incomplete?null:points.length-1),
+        incomplete:incomplete,
+        accounts:accounts
       };
+    }
+
+    function setComparisonMethod(method) {
+      document.getElementById('repayment-method').value=method;
+      changeRepaymentMethod(method);
+    }
+
+    function displayComparisonResult(method, result) {
+      var show=function(suffix,val){var el=document.getElementById('compare-'+method+'-'+suffix);if(el)el.textContent=val;};
+      show('time', result.incomplete ? 'Not paid within 30 years' : formatTimeLabel(result.monthsToDebtFree));
+      var date='Not within 30 years';
+      if (!result.incomplete) {
+        var d=new Date();var day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+result.monthsToDebtFree);d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));
+        date=d.toLocaleDateString('en-US',{month:'short',year:'numeric'});
+      }
+      show('date', date);
+      show('interest', formatCurrency(result.totalInterest)+(result.incomplete?' (first 30 yr)':''));
+      var order=document.getElementById('compare-'+method+'-order');
+      order.replaceChildren();
+      // Show initial strategy priority, not the payoff completion order (which can differ).
+      var sorted=debts.filter(function(d){return Number(d.balance)>0.01;}).slice().sort(function(a,b){
+        if(a.type==='Mortgage' && b.type!=='Mortgage')return 1;
+        if(b.type==='Mortgage' && a.type!=='Mortgage')return -1;
+        return method==='avalanche' ? (Number(b.rate)-Number(a.rate)||Number(a.balance)-Number(b.balance)) : (Number(a.balance)-Number(b.balance)||Number(b.rate)-Number(a.rate));
+      });
+      sorted.forEach(function(d){var li=document.createElement('li');li.textContent=d.name+' ('+(method==='avalanche'?(Number(d.rate)*100).toFixed(2)+'% APR':formatCurrency(d.balance))+')';order.appendChild(li);});
+      if(!sorted.length){var li=document.createElement('li');li.textContent='No outstanding debts';order.appendChild(li);}
+      var panel=document.getElementById('compare-'+method);
+      panel.classList.toggle('chosen',repaymentMethod===method);
+    }
+
+    function updateMethodComparison() {
+      var opts={applyAccountExtras:true,enableSnowballCascade:true,addlLoanMonthly:sliderLoanExtra,addlMortgageCurtailment:sliderMortgageCurtailment};
+      var snow=calculateAmortization(debts,Object.assign({},opts,{repaymentMethod:'snowball'}));
+      var aval=calculateAmortization(debts,Object.assign({},opts,{repaymentMethod:'avalanche'}));
+      displayComparisonResult('snowball',snow);
+      displayComparisonResult('avalanche',aval);
+      var msg=document.getElementById('compare-difference');
+      if (!debts.some(function(d){return Number(d.balance)>0.01;})){msg.textContent='Add debts to compare both methods.';return;}
+      if(snow.incomplete||aval.incomplete){msg.textContent='One or both strategies extend past 30 years. Interest totals only cover the first 30 years and are not comparable lifetime totals.';return;}
+      var delta=Math.abs(snow.totalInterest-aval.totalInterest);
+      var intWinner=delta<0.01?'Neither':snow.totalInterest<aval.totalInterest?'Snowball':'Avalanche';
+      var timeDelta=Math.abs(snow.monthsToDebtFree-aval.monthsToDebtFree);
+      var timeWinner=timeDelta===0?'Same payoff time':snow.monthsToDebtFree<aval.monthsToDebtFree?'Snowball is faster':'Avalanche is faster';
+      msg.textContent=(intWinner==='Neither'?'Both methods have the same projected interest':intWinner+' saves '+formatCurrency(delta)+' in projected interest')+' · '+(timeDelta===0?timeWinner:timeWinner+' by '+formatTimeLabel(timeDelta))+'.';
     }
 
     function runDebtSimulation() {
@@ -979,6 +1084,7 @@
         document.getElementById('disp-total-payoff').innerText = "0 mo";
         document.getElementById('disp-total-interest').innerText = "$0";
         renderPayoffSchedule([]);
+        updateMethodComparison();
         if (chartBalanceTimeline) chartBalanceTimeline.destroy();
         if (chartPayoffStrategy) chartPayoffStrategy.destroy();
         return;
@@ -1008,27 +1114,30 @@
       var resAccelerated = calculateAmortization(debts, {
         applyAccountExtras: true,
         enableSnowballCascade: true,
+        repaymentMethod: repaymentMethod,
         addlLoanMonthly: sliderLoanExtra,
         addlMortgageCurtailment: sliderMortgageCurtailment
       });
 
       // Update Key Metrics matching Screenshot
-      var monthsSaved = Math.max(0, cachedBaseline.monthsToDebtFree - resAccelerated.monthsToDebtFree);
-      document.getElementById('disp-time-saved').innerText = formatTimeLabel(monthsSaved) + " earlier";
+      var monthsSaved = cachedBaseline.monthsToDebtFree !== null && resAccelerated.monthsToDebtFree !== null
+        ? Math.max(0, cachedBaseline.monthsToDebtFree - resAccelerated.monthsToDebtFree) : null;
+      document.getElementById('disp-time-saved').innerText = monthsSaved === null ? 'Beyond 30-year projection' : formatTimeLabel(monthsSaved) + ' earlier';
       
       var interestSaved = Math.max(0, cachedBaseline.totalInterest - resAccelerated.totalInterest);
       document.getElementById('disp-interest-saved').innerText = formatCurrency(interestSaved);
 
-      document.getElementById('disp-cc-payoff').innerText = formatTimeLabel(resAccelerated.ccPayoffMonths);
-      document.getElementById('disp-total-payoff').innerText = formatTimeLabel(resAccelerated.monthsToDebtFree);
+      document.getElementById('disp-cc-payoff').innerText = resAccelerated.ccPayoffMonths === null ? 'Beyond 30 yr' : formatTimeLabel(resAccelerated.ccPayoffMonths);
+      document.getElementById('disp-total-payoff').innerText = resAccelerated.monthsToDebtFree === null ? 'Beyond 30 yr' : formatTimeLabel(resAccelerated.monthsToDebtFree);
       document.getElementById('disp-total-interest').innerText = formatCurrency(resAccelerated.totalInterest);
 
       renderPayoffSchedule(resAccelerated.accounts);
+      updateMethodComparison();
       updateCharts(cachedBaseline, cachedMinPlusExtra, resAccelerated);
     }
 
     function updateCharts(baselineRes, minExtraRes, acceleratedRes) {
-      var maxMonths = baselineRes.monthsToDebtFree;
+      var maxMonths = baselineRes.monthsToDebtFree || 360;
       var maxY = Math.ceil(baselineRes.points[0].y * 1.05);
 
       // --- Chart 1: Accelerated Snowball vs Standard Baseline (Matching Screenshot) ---
@@ -1054,7 +1163,7 @@
                 pointBackgroundColor: '#64748b'
               },
               {
-                label: 'Accelerated snowball',
+                label: 'Accelerated ' + repaymentMethod,
                 data: acceleratedRes.points,
                 borderColor: '#2563eb',
                 backgroundColor: 'rgba(37, 99, 235, 0.12)',
@@ -1121,6 +1230,7 @@
         chartPayoffStrategy.options.scales.y.max = maxY;
         chartPayoffStrategy.data.datasets[0].data = baselineRes.points;
         chartPayoffStrategy.data.datasets[1].data = acceleratedRes.points;
+        chartPayoffStrategy.data.datasets[1].label = 'Accelerated ' + repaymentMethod;
         chartPayoffStrategy.update('none');
       }
 
