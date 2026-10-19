@@ -1306,92 +1306,68 @@
       }
     }
 
-    // Savings Growth Projection Chart (Simulating next 60 months of contributions & compound APY)
+    // Treat entered APY as an effective annual yield. Savings contributions occur at month-end.
+    function monthlySavingsRate(apy) {
+      return Math.pow(1 + Math.max(-0.999999, Number(apy) || 0), 1 / 12) - 1;
+    }
+
+    function projectedGoalMonths(s) {
+      var balance = Math.max(0, Number(s.current) || 0);
+      var target = Math.max(0, Number(s.target) || 0);
+      var contribution = Math.max(0, Number(s.monthly) || 0);
+      if (balance >= target) return 0;
+      var rate = monthlySavingsRate(s.apy);
+      if (contribution <= 0 && rate <= 0) return null;
+      // Explicit iteration handles zero contribution, negative yields and rounding robustly.
+      for (var m = 1; m <= 1200; m++) {
+        balance = balance * (1 + rate) + contribution;
+        if (balance >= target - 0.0000001) return m;
+        if (!Number.isFinite(balance)) return null;
+      }
+      return null; // Not reached within 100 years under these assumptions.
+    }
+
+    function savingsGoalTimeLabel(months) {
+      if (months === null) return 'Not reached within 100 years';
+      if (months === 0) return 'Goal reached';
+      var years = Math.floor(months / 12), rem = months % 12;
+      return (years ? years + ' yr' : '') + (years && rem ? ' ' : '') + (rem ? rem + ' mo' : '');
+    }
+
+    // 5-year chart: grow every savings account independently using its own APY.
     function renderSavingsChart() {
       var ctx = document.getElementById('savingsProjectionChart');
       if (!ctx) return;
       var ctx2d = ctx.getContext('2d');
-
-      var totalCurrent = savings.reduce(function(sum, s) { return sum + s.current; }, 0);
-      var totalMonthly = savings.reduce(function(sum, s) { return sum + s.monthly; }, 0);
-      var avgApy = savings.length > 0 ? (savings.reduce(function(sum, s) { return sum + s.apy; }, 0) / savings.length) : 0.04;
-
-      var labels = [];
-      var growthData = [];
-      var contributionOnlyData = [];
-      var curVal = totalCurrent;
-      var contVal = totalCurrent;
-
-      for (var mo = 0; mo <= 60; mo += 6) {
-        labels.push(mo === 0 ? "Now" : "Yr " + (mo / 12).toFixed(1));
-        if (mo === 0) {
-          growthData.push(Math.round(curVal));
-          contributionOnlyData.push(Math.round(contVal));
-        } else {
-          // Compound monthly over 6 month steps
-          for (var k = 0; k < 6; k++) {
-            curVal = (curVal + totalMonthly) * (1 + avgApy / 12);
-            contVal += totalMonthly;
-          }
-          growthData.push(Math.round(curVal));
-          contributionOnlyData.push(Math.round(contVal));
+      var balances = savings.map(function(s) { return Math.max(0, Number(s.current) || 0); });
+      var monthly = savings.map(function(s) { return Math.max(0, Number(s.monthly) || 0); });
+      var rates = savings.map(function(s) { return monthlySavingsRate(s.apy); });
+      var totalStarting = balances.reduce(function(a,b) { return a+b; }, 0);
+      var monthlyDeposits = monthly.reduce(function(a,b) { return a+b; }, 0);
+      var labels = [], growthData = [], contributionOnlyData = [];
+      for (var mo=0; mo<=60; mo++) {
+        if (mo>0) balances = balances.map(function(b,i) { return b * (1 + rates[i]) + monthly[i]; });
+        if (mo % 6 === 0) {
+          labels.push(mo === 0 ? 'Now' : 'Yr ' + (mo/12).toFixed(1));
+          growthData.push(Math.round(balances.reduce(function(a,b){return a+b;},0)));
+          contributionOnlyData.push(Math.round(totalStarting + monthlyDeposits * mo));
         }
       }
-
       if (chartSavingsProjection) {
-        chartSavingsProjection.data.labels = labels;
-        chartSavingsProjection.data.datasets[0].data = growthData;
-        chartSavingsProjection.data.datasets[1].data = contributionOnlyData;
+        chartSavingsProjection.data.labels=labels;
+        chartSavingsProjection.data.datasets[0].data=growthData;
+        chartSavingsProjection.data.datasets[1].data=contributionOnlyData;
         chartSavingsProjection.update();
       } else {
         chartSavingsProjection = new Chart(ctx2d, {
           type: 'line',
-          data: {
-            labels: labels,
-            datasets: [
-              {
-                label: 'Projected Balance (with APY Interest)',
-                data: growthData,
-                borderColor: '#1e3a1e',
-                backgroundColor: 'rgba(30, 58, 30, 0.08)',
-                borderWidth: 2.5,
-                fill: true,
-                pointRadius: 3.5,
-                pointBackgroundColor: '#1e3a1e'
-              },
-              {
-                label: 'Total Deposits Only',
-                data: contributionOnlyData,
-                borderColor: '#94a3b8',
-                backgroundColor: 'transparent',
-                borderWidth: 1.5,
-                borderDash: [4, 4],
-                fill: false,
-                pointRadius: 0
-              }
-            ]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
-              tooltip: {
-                callbacks: {
-                  label: function(item) { return item.dataset.label + ': ' + formatCurrency(item.parsed.y); }
-                }
-              }
-            },
-            scales: {
-              x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-              y: {
-                ticks: {
-                  callback: function(v) { return '$' + Math.round(v / 1000) + 'k'; },
-                  font: { size: 10 }
-                },
-                grid: { color: '#f1f5f9' }
-              }
-            }
+          data: { labels:labels, datasets: [
+            { label:'Projected Balance (individual APYs)', data:growthData, borderColor:'#1e3a1e', backgroundColor:'rgba(30,58,30,0.08)', borderWidth:2.5, fill:true, pointRadius:3.5, pointBackgroundColor:'#1e3a1e' },
+            { label:'Total Deposits Only', data:contributionOnlyData, borderColor:'#94a3b8', backgroundColor:'transparent', borderWidth:1.5, borderDash:[4,4], fill:false, pointRadius:0 }
+          ]},
+          options: { responsive:true, maintainAspectRatio:false,
+            plugins: {legend:{position:'top',labels:{boxWidth:12,font:{size:11}}}, tooltip:{callbacks:{label:function(item){return item.dataset.label+': '+formatCurrency(item.parsed.y);}}}},
+            scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{callback:function(v){return '$'+Math.round(v/1000)+'k';},font:{size:10}},grid:{color:'#f1f5f9'}}}
           }
         });
       }
@@ -1403,9 +1379,8 @@
       list.innerHTML = "";
 
       savings.forEach(function(s) {
-        var rem = Math.max(0, s.target - s.current);
-        var mos = s.monthly > 0 ? Math.ceil(rem / s.monthly) : "-";
-        var pct = Math.min(100, Math.round((s.current / s.target) * 100));
+        var mos = projectedGoalMonths(s);
+        var pct = Number(s.target) > 0 ? Math.min(100, Math.round((s.current / s.target) * 100)) : 100;
 
         var item = document.createElement("div");
         item.className = "list-item";
@@ -1413,7 +1388,7 @@
           '<div class="item-top-row">' +
             '<div>' +
               '<div class="item-name">' + s.name + '</div>' +
-              '<div class="item-detail">+' + formatCurrency(s.monthly) + '/mo | ' + (s.apy * 100).toFixed(2) + '% APY | Target in: ' + mos + ' mos</div>' +
+              '<div class="item-detail">+' + formatCurrency(s.monthly) + '/mo | ' + (s.apy * 100).toFixed(2) + '% APY | Target in: ' + savingsGoalTimeLabel(mos) + '</div>' +
             '</div>' +
             '<div style="text-align: right;">' +
               '<div class="item-amount-large">' + formatCurrency(s.current) + '</div>' +

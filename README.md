@@ -60,3 +60,10 @@ Encrypted manual backups and cloud backups now accept numeric 4–12 digit PINs.
 - Selecting a method updates the existing repayment strategy and local persistence.
 - The comparison assumes the existing 30-year projection ceiling; it flags incomplete simulations rather than treating 30 years as a payoff date.
 - Existing financial records, PIN, backups, savings, expenses, notes and PWA assets are unchanged.
+
+
+## Version 10 — Savings projection correction
+- Savings goal estimated time now compounds each month using its own effective annual yield (APY), with month-end contributions. A negative APY is also handled.
+- Savings growth chart now projects each account using its individual APY, rather than applying one simple average rate to the combined balance.
+- Example: $25,000 initial, $750/month, 10% APY, $1,000,000 goal takes 280 months (23 years, 4 months), under constant-return assumptions. Actual TSP investment returns fluctuate.
+- No stored-data schema changes; existing local entries and backups remain compatible.
