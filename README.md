@@ -67,3 +67,9 @@ Encrypted manual backups and cloud backups now accept numeric 4–12 digit PINs.
 - Savings growth chart now projects each account using its individual APY, rather than applying one simple average rate to the combined balance.
 - Example: $25,000 initial, $750/month, 10% APY, $1,000,000 goal takes 280 months (23 years, 4 months), under constant-return assumptions. Actual TSP investment returns fluctuate.
 - No stored-data schema changes; existing local entries and backups remain compatible.
+
+## Version 11 — Per-debt projection start dates
+- Add or edit a debt to set **Debt Reduction Start Date**. The entered remaining balance is treated as the balance at that date (not historical principal). Existing records keep their original values and may be assigned dates later.
+- Under **Debts**, expand **View projected monthly balance** to see opening balance, interest, payments, and ending balance month by month; dates derive from each debt's start date.
+- Simulations use the selected Snowball or Avalanche strategy and the current extra-payment settings. Results are forecasts, not a ledger of actual payments. Separate debts may use separate calendar anchors while the model still calculates a common month-by-month portfolio simulation.
+- Export a fresh encrypted backup after adding dates. Existing backup schemas preserve debt fields including `startDate`.

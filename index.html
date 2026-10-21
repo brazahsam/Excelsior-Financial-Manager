@@ -323,6 +323,14 @@
     .compare-panel li{padding:3px 0;overflow-wrap:anywhere}
     .compare-note{margin-top:10px;color:var(--text-muted);font-size:12px;line-height:1.5}
     @media (max-width:360px){.compare-grid{gap:6px}.compare-panel{padding:9px}.compare-panel strong{font-size:13px}}
+    .debt-forecast { margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 9px; }
+    .debt-forecast summary { font-size: 12px; color: #1e3a1e; font-weight: 700; cursor: pointer; padding: 5px 0; }
+    .debt-forecast-note {font-size:11px; color:#64748b; margin:8px 0; line-height:1.5}
+    .debt-forecast-scroll {max-height:290px; overflow:auto; border:1px solid #e2e8f0; border-radius:7px}
+    .debt-forecast-table {border-collapse:collapse; font-size:11px; width:100%; min-width:360px}
+    .debt-forecast-table th,.debt-forecast-table td {padding:8px 7px; text-align:right; border-bottom:1px solid #edf2f7; white-space:nowrap}
+    .debt-forecast-table th:first-child,.debt-forecast-table td:first-child {text-align:left}
+    .debt-forecast-table th {position:sticky;top:0;background:#f1f5f9;z-index:1}
   </style>
   <style>
     #pin-gate{position:fixed;inset:0;z-index:9999;background:linear-gradient(150deg,#122b14,#1e3a1e);display:flex;align-items:center;justify-content:center;padding:20px;color:white}
@@ -628,6 +636,12 @@
       </div>
 
       <div class="form-group">
+        <label for="debt-modal-start">Debt Reduction Start Date</label>
+        <input type="date" id="debt-modal-start">
+        <small style="display:block;margin-top:5px;color:#64748b;line-height:1.4">The balance entered above is the balance at this date. Future monthly payments are projected from it; this is not an actual payment history.</small>
+      </div>
+
+      <div class="form-group">
         <label>Minimum Monthly Payment ($)</label>
         <input type="number" id="debt-modal-payment" placeholder="0">
       </div>
@@ -780,6 +794,10 @@
     var isSavingsChartExpanded = false;
 
     function formatCurrency(v) { return "$" + Math.round(v || 0).toLocaleString(); }
+
+    function debtTodayISO() { var d=new Date(); var y=d.getFullYear(); var m=String(d.getMonth()+1).padStart(2,'0'); var day=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; }
+    function debtDateLabel(iso) { if(!/^\d{4}-\d{2}-\d{2}$/.test(iso||''))return 'Date not set'; var p=iso.split('-').map(Number);return new Date(Date.UTC(p[0],p[1]-1,p[2])).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}); }
+    function debtMonthLabel(iso, offset) { var p=(iso||debtTodayISO()).split('-').map(Number); var start=new Date(Date.UTC(p[0],p[1]-1,1)); start.setUTCMonth(start.getUTCMonth()+offset);return start.toLocaleDateString('en-US',{month:'short',year:'numeric',timeZone:'UTC'}); }
 
     function formatTimeLabel(months) {
       if (months <= 0) return "Now";
@@ -955,7 +973,7 @@
           minPayment:Math.max(0,Number(d.payment)||0),
           extraPayment:d.type==='Mortgage'?0:Math.max(0,Number(d.extraPayment)||0),
           curtailment:d.type==='Mortgage'?Math.max(0,Number(d.curtailment)||0):0,
-          totalInterestPaid:0, payoffMonth:null
+          totalInterestPaid:0, payoffMonth:null, balanceHistory:[], startDate:d.startDate||null
         };
       });
       var monthsLimit=360;
@@ -974,6 +992,8 @@
         var active=accounts.filter(function(a){return a.balance>0.01;});
         if(!active.length) break;
         if(!ccPayoffMonth && !active.some(function(a){return a.type!=='Mortgage';})) ccPayoffMonth=m-1;
+        var monthOpening={};
+        active.forEach(function(a){monthOpening[a.id]=a.balance;});
         active.forEach(function(a){
           var interest=a.balance*(a.rate/12);
           a.balance+=interest;
@@ -1015,6 +1035,13 @@
             if(a.balance<=0.01){a.balance=0;a.payoffMonth=m;}
           });
         }
+        accounts.forEach(function(a){
+          if(monthOpening[a.id]===undefined) return;
+          var opening=monthOpening[a.id];
+          var interest=a.totalInterestPaid - (a.balanceHistory.length ? a.balanceHistory.reduce(function(t,x){return t+x.interest;},0) : 0);
+          var paid=Math.max(0,opening+interest-a.balance);
+          a.balanceHistory.push({month:m,opening:opening,interest:interest,payment:paid,closing:a.balance});
+        });
         var total=accounts.reduce(function(t,a){return t+a.balance;},0);
         points.push({x:m,y:Math.round(total)});
         if(total<=0.01)break;
@@ -1132,6 +1159,7 @@
       document.getElementById('disp-total-interest').innerText = formatCurrency(resAccelerated.totalInterest);
 
       renderPayoffSchedule(resAccelerated.accounts);
+      renderDebtForecasts(resAccelerated.accounts);
       updateMethodComparison();
       updateCharts(cachedBaseline, cachedMinPlusExtra, resAccelerated);
     }
@@ -1445,6 +1473,7 @@
             '<div>' +
               '<div class="item-name">' + d.name + '</div>' +
               '<div class="item-detail">' + (d.rate * 100).toFixed(2) + '% APR | Base Min: ' + formatCurrency(d.payment) + '/mo | ' + extraInfo + '</div>' +
+              '<div class="item-detail">Projection begins: ' + (d.startDate ? debtDateLabel(d.startDate) : 'Not set (uses today)') + '</div>' +
             '</div>' +
             '<div class="item-amount-large">' + formatCurrency(d.balance) + '</div>' +
           '</div>' +
@@ -1455,7 +1484,43 @@
               '<button class="btn-action btn-delete" onclick="deleteDebt(' + d.id + ')">🗑 Remove</button>' +
             '</div>' +
           '</div>';
+        var details=document.createElement('details');details.className='debt-forecast';
+        var summary=document.createElement('summary');summary.textContent='View projected monthly balance';summary.id='debt-summary-'+d.id;
+        var forecast=document.createElement('div');forecast.id='debt-forecast-'+d.id;
+        details.appendChild(summary);details.appendChild(forecast);item.appendChild(details);
         list.appendChild(item);
+      });
+    }
+
+    function renderDebtForecasts(simAccounts) {
+      simAccounts.forEach(function(a){
+        var host=document.getElementById('debt-forecast-'+a.id);
+        if(!host)return;
+        var original=debts.find(function(d){return String(d.id)===String(a.id);});
+        if(!original)return;
+        // Preserve the open state while re-rendering the forecast.
+        var date=original.startDate || debtTodayISO();
+        var wrap=document.createElement('div');wrap.className='debt-forecast-scroll';
+        var table=document.createElement('table');table.className='debt-forecast-table';
+        var head=document.createElement('thead');var row=document.createElement('tr');
+        ['Month','Beginning','Interest','Paid','Remaining'].forEach(function(label){var th=document.createElement('th');th.textContent=label;row.appendChild(th);});
+        head.appendChild(row);table.appendChild(head);
+        var body=document.createElement('tbody');
+        var initial=document.createElement('tr');
+        [debtMonthLabel(date,0), formatCurrency(original.balance), '—','—',formatCurrency(original.balance)].forEach(function(value){var td=document.createElement('td');td.textContent=value;initial.appendChild(td);});
+        body.appendChild(initial);
+        (a.balanceHistory||[]).forEach(function(rec){
+          var tr=document.createElement('tr');
+          [debtMonthLabel(date,rec.month),formatCurrency(rec.opening),formatCurrency(rec.interest),formatCurrency(rec.payment),formatCurrency(rec.closing)].forEach(function(value){var td=document.createElement('td');td.textContent=value;tr.appendChild(td);});
+          body.appendChild(tr);
+        });
+        table.appendChild(body);wrap.appendChild(table);
+        host.replaceChildren();
+        var note=document.createElement('div');note.className='debt-forecast-note';
+        note.textContent='Projection starts '+debtDateLabel(date)+(original.startDate?'':' (today assumed; edit debt to set date)')+'. Based on '+repaymentMethod+' and current repayment settings. Monthly estimates, not recorded transactions.';
+        host.appendChild(note);host.appendChild(wrap);
+        var summary=document.getElementById('debt-summary-'+a.id);
+        if(summary){summary.textContent=a.payoffMonth?'Estimated payoff: '+debtMonthLabel(date,a.payoffMonth):'Not paid within 30-year projection';}
       });
     }
 
@@ -1468,6 +1533,7 @@
         document.getElementById('modalDebtTitle').innerText = 'Edit Creditor Account';
         document.getElementById('debt-modal-type').value = d.type;
         document.getElementById('debt-modal-name').value = d.name;
+        document.getElementById('debt-modal-start').value = d.startDate || '';
         document.getElementById('debt-modal-balance').value = d.balance;
         document.getElementById('debt-modal-rate').value = (d.rate * 100).toFixed(2);
         document.getElementById('debt-modal-payment').value = d.payment;
@@ -1477,6 +1543,7 @@
         document.getElementById('modalDebtTitle').innerText = 'Add Creditor Account';
         document.getElementById('debt-modal-type').value = 'Credit Card';
         document.getElementById('debt-modal-name').value = '';
+        document.getElementById('debt-modal-start').value = debtTodayISO();
         document.getElementById('debt-modal-balance').value = '';
         document.getElementById('debt-modal-rate').value = '';
         document.getElementById('debt-modal-payment').value = '';
@@ -1495,6 +1562,7 @@
       var id = document.getElementById('debt-edit-id').value;
       var type = document.getElementById('debt-modal-type').value;
       var name = document.getElementById('debt-modal-name').value.trim();
+      var startDate = document.getElementById('debt-modal-start').value;
       var balance = parseFloat(document.getElementById('debt-modal-balance').value) || 0;
       var rate = (parseFloat(document.getElementById('debt-modal-rate').value) || 0) / 100;
       var payment = parseFloat(document.getElementById('debt-modal-payment').value) || 0;
@@ -1510,6 +1578,7 @@
         var d = debts.find(function(x) { return x.id === parseInt(id); });
         if (d) {
           d.type = type;
+          d.startDate = startDate || null;
           d.name = name;
           d.balance = balance;
           d.rate = rate;
@@ -1522,6 +1591,7 @@
           id: Date.now(),
           type: type,
           name: name,
+          startDate: startDate || null,
           balance: balance,
           rate: rate,
           payment: payment,
