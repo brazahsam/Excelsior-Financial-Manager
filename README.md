@@ -73,3 +73,13 @@ Encrypted manual backups and cloud backups now accept numeric 4–12 digit PINs.
 - Under **Debts**, expand **View projected monthly balance** to see opening balance, interest, payments, and ending balance month by month; dates derive from each debt's start date.
 - Simulations use the selected Snowball or Avalanche strategy and the current extra-payment settings. Results are forecasts, not a ledger of actual payments. Separate debts may use separate calendar anchors while the model still calculates a common month-by-month portfolio simulation.
 - Export a fresh encrypted backup after adding dates. Existing backup schemas preserve debt fields including `startDate`.
+
+
+## Version 12: Creditor payoff date accuracy
+
+- Debt cards now distinguish **individual account payoff** (minimum payment + creditor-specific extra/curtailment) from **accelerated Snowball/Avalanche** (shared extra slider and released payments from other debts).
+- The creditor month-by-month forecast table uses individual account payments only, preventing the accelerated strategy from being mistaken for a contractual payoff date.
+- The 30-year projection remains applicable to the accelerated multi-debt strategy; individual payoff computation checks a longer 100-year horizon and explicitly flags payments that cannot cover interest.
+- For example, a $25,000 card at 9.49% APR paid at $445 + $197 = $642 per month takes approximately 47 monthly payments, assuming monthly interest and no rate changes.
+- The starting date anchors the forecast and is not an actual transaction ledger.
+- Dashboard extra-payment slider is additive to creditor-level extra amounts. Set slider to $0 to avoid unintentional additional accelerated payments.

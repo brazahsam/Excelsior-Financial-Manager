@@ -1,5 +1,5 @@
 // Excelsior Financial Manager application shell. No personal financial records are cached here.
-const CACHE_NAME = 'excelsior-pwa-v11-debt-projections';
+const CACHE_NAME = 'excelsior-v12-payoff-accuracy';
 const APP_SHELL = [
   './', './index.html', './manifest.webmanifest', './army-star-logo.png',
   './backup.js', './pin-lock.js', './firebase-config.js', './cloud-sync.js', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './favicon-32.png'
